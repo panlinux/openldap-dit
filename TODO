@@ -13,7 +13,7 @@
   and only-authenticated-users-can-read. Would be nice if we could add the
   anonynous user to a group and then just have the ACLs end in something like "by
   anongroup read by * none".
-- provide personal address books for each user (#22658)
+- provide personal address books for each user (Mandriva bug #22658)
 - try to get rid of anonymous access to ou=sudoers. We may need to rebuild sudo
   pointing it to another configuration file to avoid sharing stuff with nss_ldap
   and pam_ldap, since by default it uses /etc/ldap.conf. We can then make this
@@ -32,4 +32,6 @@
   away with creating another branch for these service principals?
 - benchmark to see the impact of all these ACLs!
 - add support for autofs maps in LDAP
+- don't overwrite files during installation, or make backups before overwriting
+  them
 
