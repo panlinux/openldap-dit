@@ -127,7 +127,7 @@ function detect_domain() {
 # output: stdout: name of temporary file
 # *exits* if error
 function make_temp() {
-	tmpfile=`mktemp ${TMP:-/tmp}/mandriva-dit.XXXXXXXXXXXX`
+	tmpfile=`mktemp ${TMP:-/tmp}/openldap-dit.XXXXXXXXXXXX`
 	if [ -f "$tmpfile" ]; then
 		echo "$tmpfile"
 		return 0
