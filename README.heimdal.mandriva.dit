@@ -1,0 +1,432 @@
+OpenLDAP can be used as a backend for heimdal's database, meaning principal
+accounts can be stored in LDAP. This README file will document the steps needed
+to integrate Heimdal's LDAP backend with OpenLDAP and openldap-mandriva-dit.
+
+Introduction
+============
+We will start with a new realm which we will call EXAMPLE.COM. The rest of this
+text assumes that openldap-mandriva-dit is installed and that the supplied
+installation script was executed, either manually or via Fibric.
+
+When using the LDAP backend, it's advisable to have a script to create users,
+because Heimdal by default will use the account structural objectClass. Since
+it's more common to use inetOrgPerson (or a derived class), the principal entry
+would need to be removed and re-added later with inetOrgPerson.
+
+Another approach would be to first create the user with whatever means are
+standard (smbldap-tools, manual script, a template in gq or luma, etc.) and
+then add the kerberos attributes later. This is the approach we will document
+here.
+
+
+Packages
+========
+Due to conflicts with MIT's Kerberos packages, Heimdal is packaged as follows
+in CS4:
+- heimdal-libs
+- heimdal-server
+- heimdal-workstation
+- heimdal-devel
+Conflicts have been added where needed. Only heimdal-libs can be installed
+concurrently with MIT's libraries.
+
+
+Overview of the changes
+=======================
+Here is a quick overview of the needed changes so that Heimdal can user
+OpenLDAP as its database backend, as well as use the openldap-mandriva-dit DIT:
+- configure Heimdal to use LDAP for its backend (krb5.conf)
+- configure OpenLDAP to accept connections from Heimdal via ldapi://
+- configure OpenLDAP to map the Heimdal ldapi:// connection to a Kerberos
+  administrative DN
+- test this mapping
+- initialize the database
+- managing user accounts
+
+
+/etc/krb5.conf
+--------------
+In order to have a database in LDAP, the following [kdc] section has to be used
+in Heimdal's /etc/krb5.conf:
+
+[kdc]
+	database = {
+		dbname = ldap:ou=People,dc=example,dc=com
+		mkey_file = /var/heimdal/mkey
+		acl_file = /var/heimdal/kadmind.acl
+	}
+
+This will instruct Heimdal to use the OpenLDAP server installed on the same
+host and to use the ou=People branch for its principals. The access method
+Heimdal uses is ldapi://, which is a unix socket on the local filesystem, and
+authentication is handled by SASL EXTERNAL which we will configure in a moment.
+
+ldapi:// in OpenLDAP
+--------------------
+OpenLDAP needs to be configured to accept conections via ldapi://, a local unix
+socket. This is done in the /etc/sysconfig/ldap file. Change the "SLAPD URL
+list" to the following:
+
+# SLAPD URL list
+SLAPDURLLIST="ldap:/// ldaps:/// ldapi:///"
+
+OpenLDAP will need to be restarted, of course, but just not yet.
+
+
+SASL EXTERNAL
+-------------
+Heimdal uses SASL EXTERNAL to authenticate itself to the OpenLDAP server when
+connecting via the ldapi:// socket. When doing this, the bind dn becomes:
+
+[root@cs4 ~]# ldapwhoami -Y EXTERNAL -H ldapi:///var/run/ldap/ldapi
+SASL/EXTERNAL authentication started
+SASL username: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL SSF: 0
+dn:gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth <----
+Result: Success (0)
+
+We are going to map this dn to a more meaningful binddn via authz-regexp. The
+slapd.conf file provided with openldap-mandriva-dit already does this, but here
+it is anyway for completeness:
+
+(...)
+ppolicy_default "cn=default,ou=Password Policies,dc=example,dc=com"
+
+authz-regexp "gidNumber=0\\\+uidNumber=0,cn=peercred,cn=external,cn=auth" <----
+        "uid=Account Admin,ou=System Accounts,dc=example,dc=com"          <----
+authz-regexp ^uid=([^,]+),cn=[^,]+,cn=auth$ uid=$1,ou=People,dc=example,dc=com
+
+With this change, and after restarting OpenLDAP, ldapwhoami now says we are an
+Account Admin:
+
+[root@cs4 ~]# ldapwhoami -Y EXTERNAL -H ldapi:///var/run/ldap/ldapi
+SASL/EXTERNAL authentication started
+SASL username: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL SSF: 0
+dn:uid=account admin,ou=system accounts,dc=example,dc=com <----
+Result: Success (0)
+
+Note that any process connecting to the ldapi:// socket as root (uid=0, gid=0)
+will be treated as an Account Administrator after this change.
+
+
+Initializing the realm
+----------------------
+We can now initialize the Kerberos realm. After OpenLDAP has been restarted,
+run the following:
+
+[root@cs4 ~]# kadmin -l
+kadmin> init EXAMPLE.COM
+Realm max ticket life [unlimited]:7d
+Realm max renewable ticket life [unlimited]:7d
+kadmin>
+
+This will create some default principals under ou=People:
+
+ou=People
+  krb5PrincipalName=krbtgt/EXAMPLE.COM@EXAMPLE.COM,ou=People,dc=example,dc=com
+  krb5PrincipalName=kadmin/changepw@EXAMPLE.COM,ou=People,dc=example,dc=com
+  krb5PrincipalName=kadmin/admin@EXAMPLE.COM,ou=People,dc=example,dc=com
+  krb5PrincipalName=changepw/kerberos@EXAMPLE.COM,ou=People,dc=example,dc=co
+  krb5PrincipalName=kadmin/hprop@EXAMPLE.COM,ou=People,dc=example,dc=com
+  krb5PrincipalName=default@EXAMPLE.COM,ou=People,dc=example,dc=com
+
+
+Managing user and principal accounts
+====================================
+The Heimdal schema allows for principal accounts to be stored in a separate
+branch from the user accounts. For example, one could have the principal
+accounts under ou=KerberosPrincipals and user accounts under ou=People.
+
+This has the obvious disadvantage of creating a problem with user management:
+when an user is removed, for example, the corresponding principal account has
+to be removed also. In other words, we would need a pointer in the user entry
+for the principal account (the seeAlso attribute is commonly used for things
+like this). And a script would need to follow this attribute and delete the
+principal account.
+
+The advantage would be that one user could be associated with many kerberos
+principals using the seeAlso attribute, like john@REALM and john/admin@REALM.
+
+But the biggest disadvantage of this scheme where principals are separated from
+users is integration with Samba and Ldap simple binds: it's lost. Heimdal will
+only update the samba password hash if it's stored in the same entry. The same
+with userPassword: with OpenLDAP using the smbk5pwd module (built with kerberos
+support), simple binds will only be able to use the kerberos password if
+everything is in the same entry.
+
+Another option would be to store the principal keys and related attributes
+right under the user entry. We can do this because the kerberos object classes
+are auxiliary. So, user John would be, for example, uid=john,ou=people and the
+kerberos keys would be stored in this same entry. When this user is removed, so
+is the principal account. The disadvantage is that one user can only have one
+principal, and not several as in the previous case (where john could have
+john@REALM and john/admin@REALM associated with the same uid=john,ou=people
+entry).
+
+But one issue comes up: what do we use to create this user in the first place?
+If we use kadmin, then it will create an entry of the form
+krb5PrincipalName=john@EXAMPLE.COM,ou=People with account being the structural
+object class. Since we tend to use a class derived from person as the
+structural class (such as inetOrgPerson), there is a conflict. If we use
+kadmin, we would have to remove the entry and re-add it with inetOrgPerson (and
+its mandatory attributes).
+
+We can even change the structural class that Heimdal will use, but it doesn't
+add the mandatory attributes so we can't just switch to inetOrgPerson in
+Heimdal's configuration.
+
+Another better option would be to first create the user with another tool, such
+as smbldap or another script, and later add the kerberos attributes. The
+main advantages are:
+- RDN naming consistent with the rest of the entries (no krb5PrincipalName in
+  the RDN if we don't want it)
+- structural object class as we want it (for example, inetOrgPerson)
+- user and principal accounts together under ou=People
+
+The biggest disadvantage is that the mapping between users and principals would
+be 1:1, that is, one user could have at most only one kerberos principal
+associated with its entry.
+
+Both schemes can be used together, however. It's actually more a question about
+how the accounts will be administered. So, regular users could have their
+kerberos keys stored in the user's entry, while administration and service keys
+would be stored under the same branch, but have no user associated with them.
+It's not very consistent with the tree (after all, ou=People was meant to host
+actual persons), but it works.
+
+We will now give examples of two possibilities: using kadmin directly and using
+another script to first create the user account and then add kerberos
+attributes.
+
+Using kadmin directly
+---------------------
+We will create a kerberos account for the user "john" using kadmin directly. We
+don't even have to start heimdal at this stage because we will be using kadmin
+in local mode:
+
+[root@cs4 ~]# kadmin -l
+kadmin> add john
+Max ticket life [1 day]:10h
+Max renewable life [1 week]:1w
+Principal expiration time [never]:
+Password expiration time [never]:
+Attributes []:
+john@EXAMPLE.COM's Password:
+Verifying - john@EXAMPLE.COM's Password:
+kadmin>
+
+This creates the following entry:
+dn: krb5PrincipalName=john@EXAMPLE.COM,ou=People,dc=example,dc=com
+objectClass: top
+objectClass: account
+objectClass: krb5Principal
+objectClass: krb5KDCEntry
+krb5PrincipalName: john@EXAMPLE.COM
+uid: john
+krb5KeyVersionNumber: 0
+krb5MaxLife: 36000
+krb5MaxRenew: 604800
+krb5KDCFlags: 126
+(...)
+
+We can obtain a ticket for this user:
+# service heimdal start
+Iniciando kdc:                                                  [  OK  ]
+[root@cs4 ~]# kinit john
+john@EXAMPLE.COM's Password:
+[root@cs4 ~]# klist
+Credentials cache: FILE:/tmp/krb5cc_0
+        Principal: john@EXAMPLE.COM
+
+  Issued           Expires          Principal
+Jun 20 15:43:23  Jun 20 22:23:23  krbtgt/EXAMPLE.COM@EXAMPLE.COM
+[root@cs4 ~]#
+
+Notice, however that this "john" user doesn't have the necessary posix
+attributes to become a system user. We will need something else to create this
+posix user anyway: Heimdal's role here is over.
+
+Adding kerberos attributes to an existing user entry
+----------------------------------------------------
+If the user account already exists in the directory, then all we need to do is
+add the necessary Heimdal object classes to this account. Being auxiliary, this
+makes perfect sense.
+
+So, for this example, we will use a pre-configured smbldap-tools package to
+create a sample user and then add the kerberos classes and attributes to it,
+but any posix user that already exists would work.
+
+Notice we don't add the samba attributes just yet:
+
+[root@cs4 ~]# smbldap-useradd mary
+Cannot confirm uidNumber 1000 is free: checking for the next one
+[root@cs4 ~]# getent passwd mary
+mary:x:1001:513:System User:/home/mary:/bin/bash
+
+The user looks like this in the directory:
+dn: uid=mary,ou=People,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: mary
+sn: mary
+givenName: mary
+uid: mary
+uidNumber: 1001
+gidNumber: 513
+homeDirectory: /home/mary
+loginShell: /bin/bash
+gecos: System User
+userPassword: {crypt}x
+
+We will use the following LDAP modification to add the kerberos attributes and
+classes to this user:
+
+$ ldapmodify -x -D 'uid=Account Admin,ou=System Accounts,dc=example,dc=com' -W
+Enter LDAP Password:
+dn: uid=mary,ou=people,dc=example,dc=com
+changetype: modify
+add: objectClass
+objectClass: krb5Principal
+objectClass: krb5KDCEntry
+-
+add: krb5PrincipalName
+krb5PrincipalName: mary@EXAMPLE.COM
+-
+add: krb5KDCFlags
+krb5KDCFlags: 126
+-
+add: krb5KeyVersionNumber
+krb5KeyVersionNumber: 0
+
+modifying entry "uid=mary,ou=people,dc=example,dc=com"
+
+Now "mary" is recognized as a kerberos principal and we can have Heimdal add
+the keys and other missing attributes by just invoking the password change
+command from an administrator:
+
+[root@cs4 ~]# kadmin -l
+kadmin> passwd mary
+mary@EXAMPLE.COM's Password:
+Verifying - mary@EXAMPLE.COM's Password:
+kadmin>
+
+This adds the remaining attributes and now "mary" is a full kerberos principal:
+
+[andreas@cs4 ~]$ kinit mary
+mary@EXAMPLE.COM's Password:
+[andreas@cs4 ~]$ klist
+Credentials cache: FILE:/tmp/krb5cc_500
+        Principal: mary@EXAMPLE.COM
+
+  Issued           Expires          Principal
+Jun 20 16:14:48  Jun 20 22:54:48  krbtgt/EXAMPLE.COM@EXAMPLE.COM
+[andreas@cs4 ~]$
+
+And with the added bonus of being a posix account as well.
+
+Password integration
+====================
+Probably the most wanted feature of a setup where Heimdal uses OpenLDAP as its
+database backend is the password integration.
+
+Three very common authentication sources in a network are Samba passwords,
+posix passwords and kerberos passwords. Just using LDAP doesn't magically
+integrate these three passwords: LDAP is just a storage and, in fact, each
+application uses it for itself:
+- samba: sambaNTPassword, sambaLMPassword
+- heimdal: krb5Key
+- posix: userPassword
+
+So, pam_ldap can change the userPassword when the user runs the password
+command at the console, but the heimdal key and samba hashes won't be changed.
+And thus we have a syncronization problem.
+
+Some administrators run scripts to solve this, or only allow the user to change
+his/her password via some sort of front-end which will take care of the details
+of updating all password hashes. Another option that is available is to use the
+contributed smbk5pwd module.
+
+smbk5pwd
+--------
+The smbk5pwd module is available in the contribs directory of the OpenLDAP
+tarball and, when built with Samba and Kerberos support, allows for this
+password integration to work automatically. The module is available by default
+in the openldap-servers package.
+
+This integration happens in three ways:
+a) EXOP password modifications
+This module intercepts OpenLDAP EXOP password modifications and updates both
+the Kerberos key and the Samba hashes of the same entry, if they are present.
+This means that a ldappasswd command, for example, will also end up changing
+the Samba and Kerberos passwords. Samba, when using the ldap passwd sync option
+in smb.conf, also ends up performing an EXOP password modification and will
+thus update the Kerberos key without even knowing it.
+
+b) kpasswd
+When Heimdal receives a password change request via kadmin or kpasswd, it will
+check if the target entry contains Samba password hashes. If it does, these
+hashes will also be updated. The userPassword attribute, used for simple binds,
+is not touched, but see below.
+
+c) simple binds (userPassword)
+Simple binds use the userPassword attribute for password verification. If this
+attribute contains the special hash specified "{K5KEY}", then the password
+verification will be performed against the kerberos key of the same entry. So,
+in order to make simple binds use the kerberos password, all we have to do is
+replace the userPassword attribute with "{K5KEY}".
+
+Using smbk5pwd
+--------------
+The following configuration changes are necessary in order to use the smbk5pwd
+module:
+
+(...)
+moduleload      back_monitor.la
+moduleload      syncprov.la
+moduleload      ppolicy.la
+moduleload      smbk5pwd.so <-----
+
+password-hash   {K5KEY} <-----
+(...)
+database bdb
+(...)
+overlay ppolicy
+ppolicy_default "cn=default,ou=Password Policies,dc=example,dc=com"
+
+overlay smbk5pwd <-----
+
+(...)
+
+Openldap will now need to be able to enter the /var/heimdal directory, so change
+its permissions to something like this:
+
+# chmod g+rx /var/heimdal
+# chgrp ldap /var/heimdal
+
+If this permissions change is not done, openldap startup will fail.
+
+Note we need to change the server password hash mechanism to {K5KEY}. If we
+don't do it, then password changes via EXOP will overwrite the userPassword
+attribute with the new hash instead of leaving it at {K5KEY} and we will loose
+our password integration.
+
+The smbk5pwd module accepts some configuration directives like smbk5pwd-enable
+and smbk5pwd-must-change, please see its README file in the openldap-servers
+documentation directory for details.
+
+If Samba is being used, then the ldap passwd sync option should be set to
+"Only". With this option, Samba will only perform the EXOP password
+modification and expect the OpenLDAP server to update the Samba hashes, which
+is what smbk5pwd will do:
+
+In the [global] section of /etc/samba/smb.conf, add:
+ldap passwd sync = Only <-----
+
+Now, test ldappasswd, smbpasswd and kpasswd: a password change performed by any
+of these should change all three authentication sources.
+

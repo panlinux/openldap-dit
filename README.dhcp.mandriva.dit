@@ -1,0 +1,148 @@
+This DIT has support for DHCP information stored under ou=dhcp. Necessary
+steps:
+- import dhcpd.conf data into ou=dhcp
+- configure /etc/dhcpd.conf to use LDAP (with or without authentication)
+
+Please also read the README.ldap file in the documentation directory of the
+dhcp-common package.
+
+Importing data
+--------------
+The dhcp-common package has a contrib script which can be used to import an
+existing /etc/dhcpd.conf file into LDAP. The script is located at the
+documentation directory inside the contrib directory:
+
+/usr/share/doc/dhcp-common-<version>/contrib/dhcpd-conf-to-ldap.pl
+
+More experienced administrators wanting to create an LDIF file from scratch
+should consult the README.ldap file mentioned before.
+
+For this example, we will import the following simple configuration file:
+
+ddns-update-style none;
+
+subnet 172.16.10.0 netmask 255.255.255.0 {
+	option routers 172.16.10.1;
+	option subnet-mask 255.255.255.0;
+
+	option domain-name "example.com";
+
+	option domain-name-servers 10.0.0.5;
+	default-lease-time 21600;
+	max-lease-time 43200;
+
+	deny unknown-clients;
+
+	host test009.example.com {
+		hardware ethernet 00:C0:DF:02:93:71;
+		fixed-address 172.16.10.5;
+	}
+}
+
+The command below creates the ldif file corresponding to our current dhcpd.conf
+configuration.  Please note that this script has not yet been tested with all
+possible dhcp configuration scenarios. Please always review the resulting LDIF
+file.
+
+$ perl /usr/share/doc/dhcp-common-3.0.3/contrib/dhcpd-conf-to-ldap.pl \
+--basedn "ou=dhcp,dc=example,dc=com" \
+--dhcpdn "cn=DHCP Config,ou=dhcp,dc=example,dc=com" \
+--conf /etc/dhcpd.conf --server cs4.example.com --ldif dhcpd.ldif
+Creating LDAP Configuration with the following options:
+        Base DN: ou=dhcp,dc=example,dc=com
+        DHCP DN: cn=DHCP Config,ou=dhcp,dc=example,dc=com
+        Server DN: cn=cs4.example.com, ou=dhcp,dc=example,dc=com
+
+Done.
+
+The options we used are:
+- basedn: branch where dhcp information will be stored
+- dhcpdn: entry which will contain the configuration of our server
+- conf: dhcpd.conf file which will be migrated to LDAP
+- server: fqdn of the dhcp server (should match the output of the hostname
+  command)
+- ldif: output ldif file
+
+dhcpd.ldif now has the data we will import. Let's take a look:
+
+dn: cn=cs4.example.com, ou=dhcp,dc=example,dc=com
+cn: cs4.example.com
+objectClass: top
+objectClass: dhcpServer
+dhcpServiceDN: cn=DHCP Config,ou=dhcp,dc=example,dc=com
+
+dn: cn=DHCP Config,ou=dhcp,dc=example,dc=com
+cn: DHCP Config
+objectClass: top
+objectClass: dhcpService
+dhcpPrimaryDN: cn=cs4.example.com, ou=dhcp,dc=example,dc=com
+dhcpStatements: ddns-update-style none
+
+dn: cn=172.16.10.0, cn=DHCP Config,ou=dhcp,dc=example,dc=com
+cn: 172.16.10.0
+objectClass: top
+objectClass: dhcpSubnet
+objectClass: dhcpOptions
+dhcpNetMask: 24
+dhcpStatements: default-lease-time 21600
+dhcpStatements: max-lease-time 43200
+dhcpStatements: deny unknown-clients
+dhcpOption: routers 172.16.10.1
+dhcpOption: subnet-mask 255.255.255.0
+dhcpOption: domain-name "example.com"
+dhcpOption: domain-name-servers 10.0.0.5
+
+dn: cn=test009.example.com, cn=172.16.10.0, cn=DHCP Config,ou=dhcp,dc=example,dc=com
+cn: test009.example.com
+objectClass: top
+objectClass: dhcpHost
+dhcpHWAddress: ethernet 00:c0:df:02:93:71
+dhcpStatements: fixed-address 172.16.10.5
+
+
+This data can now be imported. We will use the DHCP Admin account for this:
+
+$ ldapadd -x -D "uid=DHCP Admin,ou=System Accounts,dc=example,dc=com" -W -f dhcpd.ldif
+Enter LDAP Password:
+adding new entry "cn=cs4.example.com, ou=dhcp,dc=example,dc=com"
+
+adding new entry "cn=DHCP Config,ou=dhcp,dc=example,dc=com"
+
+adding new entry "cn=172.16.10.0, cn=DHCP Config,ou=dhcp,dc=example,dc=com"
+
+adding new entry "cn=test009.example.com, cn=172.16.10.0, cn=DHCP Config,ou=dhcp,dc=example,dc=com"
+
+
+Final adjustments to dhcpd.conf
+-------------------------------
+We can now remove most of the configuration from /etc/dhcpd.conf, leaving only
+the LDAP part.  This results in the following file:
+
+ldap-server "cs4.conectiva";
+ldap-port 389;
+ldap-username "uid=DHCP Reader,ou=System Accounts,dc=example,dc=com";
+ldap-password "dhcpreader";
+ldap-base-dn "ou=dhcp,dc=example,dc=com";
+ldap-method dynamic;
+
+Above we chose to use authenticated binds, but anonymous searches can also be
+used: juse leave ldap-username and ldap-password out.
+
+After this last change, the dhcp server can be started and it will be
+consulting the LDAP tree.
+
+
+Delegation
+----------
+If you want to give someone DHCP administrative privileges, just put his/her dn
+in the DHCP Admins group. For example, to give such privileges to the user joe:
+
+$ ldapmodify -x -D 'uid=DHCP Admin,ou=System Accounts,dc=example,dc=com' -W
+Enter LDAP Password:
+dn: cn=DHCP Admins,ou=System Groups,dc=example,dc=com
+changetype: modify
+add: member
+member: uid=joe,ou=People,dc=example,dc=com
+
+modifying entry "cn=DHCP Admins,ou=System Groups,dc=example,dc=com"
+

@@ -1,0 +1,322 @@
+Introduction
+============
+
+This document aims to explain the Directory Information Tree (DIT) used in the
+openldap-mandriva-dit package.
+
+The motivation for this new layout is the need for a better separation of
+privileges regarding access to the information stored in the directory. The
+super user account of the directory should be used rarely and delegation of
+privileges should be easier.
+
+We think this proposed layout accomplishes that by providing several groups
+which have distinctive access rules, providing a clear separation of
+privileges. In order to give an user a new privilege, all is needed is to add
+him/her to one of these specific groups.
+
+These are the characteristics of the proposed DIT:
+- several groups for common services
+- most access control rules based on group membership
+- several system accounts ready to use (just add a password) by many services
+  such as:
+  - sudo
+  - dns
+  - samba
+  - etc
+- simple installation script which prepares the tree asking very few questions
+  (just two, and one of them is just a password)
+- easy support for OpenLDAP's password policy overlay
+
+These accounts get their privileges by being associated to specific group(s).
+
+Administrators should note that we will probably find out that there are too
+few groups, or too many. Or that some ACLs are too restrictive, or too broad.
+It is difficult to come up with a one-size-fits-all DIT, but we can start here.
+
+By the way, there is no password set for the "rootdn" account as it (the
+account) is not used.
+
+If you just want to know how to use this DIT, skip to the end of the document
+to the section called "Enough with the theory: how to use this?".
+
+
+The Tree
+========
+
+                             dc=example,dc=com
+
+  ou=Hosts                        ou=System Groups            ou=System Accounts
+  ou=Idmap                          cn=LDAP Admins              uid=Ldap Admin
+  ou=Address Book                   cn=Sudo Admins              uid=Sudo Admin
+  ou=dhcp                           cn=DNS Admins               uid=DNS Admin
+  ou=dns                            cn=DNS Readers              uid=DNS Reader
+  ou=People                         cn=DHCP Admins              uid=DHCP Admin
+  ou=Group                          cn=Address Book Admins      uid=Address Book Admin
+  ou=Password Policies              cn=LDAP Replicators         uid=LDAP Replicator
+  ou=Sudoers                        cn=Account Admins           uid=Account Admin
+                                    cn=MTA Admins               uid=MTA Admin
+                                    cn=LDAP Monitors            uid=LDAP Monitor
+                                    cn=Idmap Admins             uid=Idmap Admin
+                                                                uid=smbldap-tools
+                                                                uid=nssldap
+
+The services
+============
+
+We created some entries for a few services that can use LDAP to store their
+information. More will probably be added in the future. For now, we have
+branches for:
+- dns (ou=dns)
+- sudo (ou=sudoers)
+- dhcp (ou=dhcp)
+
+The respective administrative groups have read/write access to these branches
+for specific entries.
+
+
+The groups
+==========
+
+Groups are the core of this proposed DIT layout, because most ACLs are
+constructed via group membership to allow for greater flexibility and
+delegation.
+
+The current default groups that are born with the new DIT layout are as
+follows:
+- LDAP Admins
+- Sudo Admins
+- DNS Admins
+- DNS Readers
+- DHCP Admins
+- Address Book Admins
+- LDAP Replicators
+- Account Admins
+- MTA Admins
+- LDAP Monitors
+- Idmap Admins
+
+Each entry has a description attribute filled in with a brief text describing
+the purpose of the members of each group. For example:
+
+dn: cn=Sudo Admins,ou=System Groups,dc=example,dc=com
+description: Members can administer ou=sudoers entries and attributes
+
+In order to use groups in ACLs, the objectClass used for these entries has to
+use attributes where membership is indicated distinguished names and not just
+names. In other words, the membership attribute has to use a full DN to
+indicate its member. The standard object class used for this by OpenLDAP is
+groupOfNames, and this is what we used. For example:
+
+dn: cn=Sudo Admins,ou=System Groups,dc=example,dc=com
+member: uid=Sudo Admin,ou=System Accounts,dc=example,dc=com
+
+A side effect of using groupOfNames is that we *have* to have at least one
+member in each group. So we needed to create standard accounts, which proved to
+be usefull anyway. The previous example showed the standard account for
+adminstering sudo entries and attributes.
+
+
+The accounts
+============
+
+As was the case with the groups, many standard system accounts were created.
+Each group has at least a corresponding system account as its membership. The
+current list is as follows:
+
+- Account Admin
+- smbldap-tools
+- nssldap
+- MTA Admin
+- DHCP Admin
+- DNS Admin
+- DNS Reader
+- Sudo Admin
+- Address Book Admin
+- LDAP Admin
+- LDAP Replicator
+- LDAP Monitor
+- Idmap Admin
+
+
+The privileges
+==============
+
+The idea is to give each group the needed privileges to complete its
+administration tasks. This usually means having access to the respective ou=foo
+branch of the directory. For example, the Sudo Admins group has rights over the
+ou=sudoers branch of the directory. 
+
+Whenever possible, however, these rights are limited to that specific service,
+i.e., it's not any kind of entry that can be created but just those relevant to
+the service. For example, the Sudo Admins members can only create entries one
+level below ou=sudoers, and only with the attributes allowed by the sudoRole
+object class.
+
+Other cases, however, are more complicated. We will list them here and the
+reasoning behind the chosen ACLs.
+
+
+Monitoring access
+-----------------
+The "LDAP Monitors" group is the only grop besides "LDAP Admins" which can read
+entries under cn=monitor. This base dn contains statistics about the server,
+such as operations performed, backends and overlays being used, etc. So, if you
+need an user to have read access to this kind of information, just put him/her
+in this group.
+
+
+Samba, Unix and Kerberos admins
+-------------------------------
+Samba needs to have corresponding unix accounts for its users and machine
+accounts. It will not by itself create those, however. For example, when
+running "smbpasswd -a foo", the "foo" user account will only be created if
+samba can find the corresponding unix attributes.  The same for group mappings
+and machine accounts.
+
+Earlier versions of openldap-mandriva-dit had two separate privilege groups:
+one for Unix accounts and another for Samba accounts. This complicated ACLs,
+and it was worse when we later added Kerberos Admins to the mix because they
+also had to touch some of the account-related attributes.
+
+So, since version 0.11, we merged these groups into one called Account Admins
+(and the respective Account Admin account). This made the ACLs simplier and
+faster, at the expense of some granularity in privileges.
+
+The smbldap-tools account, uid=smbldap-tools,ou=System Accounts, still exists
+but is now a member of the Account Admins group.
+
+
+MTA
+---
+As of this moment, there is no clear scenario for usage of this account. For
+now, it can administer just a few attributes: all the ones from the
+inetLocalMailRecipient object class plus the single mail attribute.
+
+As more usage scenarios appear, these ACLs should be incremented.
+
+
+DNS Readers
+-----------
+Members of this group are allowed read access to all attributes of the dNSZone
+object class under ou=dns. Besides them and the members of the DNS Admins
+group, no other entity can read these entries. This was done so to avoid the
+"zone transfer" vulnerability scenario, where anonymous users could gather the
+whole DNS database.
+
+
+LDAP Admins
+-----------
+Members of this group can write to and read from all entries and attributes of
+the directory and have no size or time limits.
+
+
+LDAP Replicators
+----------------
+The members of the LDAP Replicators group have read access to all attributes
+and entries of the directory so that they can be used in a syncrepl replication
+setup. The bind dn used for the replication should be a member of this group.
+For example:
+
+syncrepl    rid=100
+            provider=ldap://dirserv.example.com
+            type=refreshAndPersist
+            retry="60 +"
+            searchbase="dc=example,dc=com"
+            starttls=critical
+            bindmethod=simple
+            binddn="uid=LDAP Replicator,ou=System Accounts,dc=example,dc=com"
+            credentials="secret"
+		
+Here, "uid=LDAP Replicator,ou=System Accounts,dc=example,dc=com" is a member of
+the "LDAP Replicators" group and is automatically granted read rights to all
+entries of the directory (assuming the provider was also installed with this
+base DIT and ACLs).
+
+
+Generic directory read accounts
+-------------------------------
+A few accounts were created for specific read access. Some administrators
+prefer to block anonymous read access to the directory, in which case these
+accounts would then be used. For the moment we have:
+- nssldap: nss_ldap can bind to the directory either anonymously or with a
+  specific account. The "uid=nssldap,ou=System Accounts" was created for this
+  purpose.  Currently no ACLs make use of this account. Were the administrator to
+  use it, he/she would also have to block anonymous read access to many
+  attributes.
+
+Currently anonymous read access is granted to many attributes. As of this
+moment, if the administrator wants to restrict anonymous access and use these
+accounts, the ACLs would have to be changed manually.
+
+
+The installation script
+=======================
+
+The openldap-mandriva-dit package contains a shell script which can be used to
+install the accounts and ACLs described in this document. The script is
+installed at /usr/share/openldap/scripts/mandriva-dit-setup.sh and performs the
+following:
+- asks the DNS domain (suggesting whatever was auto-detected)
+- constructs the top-level directory entry from this domain using dc style
+  attributes
+- creates and imports an ldif file with the accounts and groups described here
+- installs new slapd.conf and mandriva-dit-access.conf files (making backups of
+  the previous ones) with the default ACLs and other useful configurations
+  (like cache)
+- loads the ldif file, backing up the previous database directory
+
+Even though the script performs many tests and backups many files before
+overwriting them, administrators are advised to backup all data before running
+this script.
+
+
+Enough with the theory: how to use this?
+========================================
+
+The installation script will overwrite some OpenLDAP files and directories.
+Specifically, it will backup and overwrite the following:
+- /etc/openldap/slapd.conf
+- /etc/openldap/ldap.conf
+- /etc/openldap/mandriva-dit-access.conf (THIS ONE HAS NO BACKUP CURRENTLY)
+- /var/lib/ldap contents
+
+So, after you are satisfied that nothing important will be lost, run the
+script. Below is a sample run using the example.com domain:
+
+[root@cs4 ~]# /usr/share/openldap/scripts/mandriva-dit-setup.sh
+Please enter your DNS domain name [conectiva]:
+example.com
+
+
+Administrator account
+
+The administrator account for this directory is
+uid=LDAP Admin,ou=System Accounts,dc=example,dc=com
+
+Please choose a password for this account:
+New password:
+Re-enter new password:
+
+
+Summary
+=======
+
+Domain:      example.com
+LDAP suffix: dc=example,dc=com
+
+Confirm? (Y/n)
+Y
+config file testing succeeded
+Stopping ldap service
+Finished, starting ldap service
+Running /usr/bin/db_recover on /var/lib/ldap
+removing /var/lib/ldap/alock
+Starting slapd (ldap + ldaps):                                  [  OK  ]
+
+Your previous database directory has been backed up as /var/lib/ldap.1145397294
+
+
+Now, fire up an LDAP browser and use the LDAP Admin account shown above to set
+up some passwords for the other less privileged accounts that you are going to
+use. Note that the "rootdn" account is not used.
+

@@ -1,0 +1,35 @@
+- better MTA Admins definitions/roles
+- have a good MTA schema (virtual domains ready perhaps?) and ACLs for it
+- we have "Domain Admins", with posixGroup and sambaGroupMapping, and "Samba
+  Admins", our special group to administer Samba attributes. This can be
+  confusing as the names have similar meaning.
+- sort out the read-only accounts: use a generic one instead of creating one
+  for each service (like nssldap today). Or not. There are other services which
+  need read access, like for example Postfix when using LDAP maps.
+- always keep in mind the possibility that we may have too many system
+  accounts: don't let this get out of control.
+- add minssf support for password access?
+- come up with an easy way to switch between a profile of anonymous-can-read
+  and only-authenticated-users-can-read. Would be nice if we could add the
+  anonynous user to a group and then just have the ACLs end in something like "by
+  anongroup read by * none".
+- provide personal address books for each user (#22658)
+- try to get rid of anonymous access to ou=sudoers. We may need to rebuild sudo
+  pointing it to another configuration file to avoid sharing stuff with nss_ldap
+  and pam_ldap, since by default it uses /etc/ldap.conf. We can then make this
+  other file mode 0600 owned by root:root and voilà, same behaviour as with the
+  regular /etc/sudoers.
+- use a global switch in the installation script so that the administrator can
+  choose to have anonymous access enabled or not. A slightly different set of
+  ACLs would then be used.
+- perhaps, instead of using one account/group per service, wouldn't it be
+  better to have accounts/groups per role? Like, for example, "Network
+  Administrators"?
+- heimdal uses only one branch to create its principals. Here we configured
+  ou=People, but that is not very nice because service principals (like
+  ldap/ldap.example.com@REALM) would also be stored there. When searching for
+  principals, heimdal can find them anywhere on the tree, so perhaps we can get
+  away with creating another branch for these service principals?
+- benchmark to see the impact of all these ACLs!
+- add support for autofs maps in LDAP
+

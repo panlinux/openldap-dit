@@ -1,0 +1,130 @@
+Sudo has support for storing its rules in a branch in an LDAP tree. See the
+README.LDAP file in sudo's documentation directory for specific details. Here
+we will show some basic examples.
+
+
+Importing data
+--------------
+The sudo rpm package contains a script called sudoers2ldif that can be used to
+convert an existing /etc/sudoers file to an ldif one which can be imported into
+LDAP. Alternatively, since the sudo schema is reasonable simple, it can be
+populated by hand.
+
+Suppose you have /etc/sudoers like this:
+
+Defaults authenticate
+%webadm web.example.com=NOPASSWD: /sbin/service httpd *,/usr/local/sbin/admindomains.sh
+%users gateway.example.com=/usr/local/sbin/upload.sh
+ROOT ALL=(ALL) ALL
+
+Converting this file into an LDIF file that can be imported at the 
+ou=sudoers,dc=example,dc=com branch is done like this:
+
+# export SUDOERS_BASE=ou=sudoers,dc=example,dc=com
+# sudoers2ldif /etc/sudoers > sudoers.ldif
+
+The resulting ldif file contains:
+dn: cn=defaults,ou=sudoers,dc=example,dc=com
+objectClass: top
+objectClass: sudoRole
+cn: defaults
+description: Default sudoOption's go here
+sudoOption: authenticate
+
+dn: cn=root,ou=sudoers,dc=example,dc=com
+objectClass: top
+objectClass: sudoRole
+cn: root
+sudoUser: root
+sudoHost: ALL
+sudoCommand: (ALL) ALL
+
+dn: cn=%webadm,ou=sudoers,dc=example,dc=com
+objectClass: top
+objectClass: sudoRole
+cn: %webadm
+sudoUser: %webadm
+sudoHost: web.example.com
+sudoCommand: /sbin/service httpd *
+sudoCommand: /usr/local/sbin/admindomains.sh
+sudoOption: !authenticate
+
+dn: cn=%users,ou=sudoers,dc=example,dc=com
+objectClass: top
+objectClass: sudoRole
+cn: %users
+sudoUser: %users
+sudoHost: gateway.example.com
+sudoCommand: /usr/local/sbin/upload.sh
+
+Note that the RDN of each entry was choosen by the script to be equal to the
+user/group who can execute the commands, because that's basically the layout of
+/etc/sudoers. With LDAP, however, we could give more meaningful names for these
+entries, such as "cn=Web Administration" or "cn=Upload rights" for the examples
+above.
+
+Anyway, this LDIF can be easily imported using the Sudo Admin account:
+# ldapadd -x -D 'uid=Sudo Admin,ou=System Accounts,dc=example,dc=com' -W -f sudoers.ldif
+Enter LDAP Password:
+adding new entry "cn=defaults,ou=sudoers,dc=example,dc=com"
+
+adding new entry "cn=%webadm,ou=sudoers,dc=example,dc=com"
+
+adding new entry "cn=%users,ou=sudoers,dc=example,dc=com"
+
+
+Configuring sudo
+----------------
+Now we have just to configure sudo to actually use our LDAP server for its
+configuration (or just part of the configuration).
+
+As of this writing, the sudo package by default uses /etc/ldap.conf for the
+ldap configuration. This file is shared with pam_ldap and nss_ldap, and there
+are pros and cons for this sharing. See the URL below for an unfinished thread
+about this:
+
+http://archives.mandrivalinux.com/cooker/2006-05/msg00527.php
+
+The most important setting in this file is sudoers_base, which we must point to
+ou=sudoers,dc=example,dc=com in our case. By default, anonymous searches of
+ou=sudoers are allowed, so we don't have to worry about authentication
+credentials now.
+
+Finally, if you want sudo to completely ignore the contents of /etc/sudoers,
+then add the attribute below to the cn=defaults entry:
+
+sudoOption: ignore_local_sudoers
+
+
+Delegating
+----------
+To give administrative rights over the ou=sudoers branch in LDAP, just include
+the user's dn in the Sudo Admins group. For example, to give such rights to the
+martins user:
+
+$ ldapmodify -x -D 'uid=Sudo Admin,ou=System Accounts,dc=example,dc=com' -W
+Enter LDAP Password:
+dn: cn=Sudo Admins,ou=System Groups,dc=example,dc=com
+changetype: modify
+add: member
+member: uid=martins,ou=People,dc=example,dc=com
+
+modifying entry "cn=Sudo Admins,ou=System Groups,dc=example,dc=com"
+
+
+
+Caveats
+-------
+The default ACLs allow anonymous access to the ou=sudoers branch. This means
+that any user with network access to the LDAP server can list everybody's sudo
+privileges. Depending on the security policies of the site, this may or may not
+be wanted.
+
+To avoid this, the ACLs could be changed to disallow anonymous access to this
+branch, but each machine with sudo would need to have the sudo ldap
+configuration file changed to have a binddn and a password. And, since this
+configuration file and its options are also shared among pam_ldap and nss_ldap,
+this means that nss_ldap would also start to use authenticated binds. See
+http://archives.mandrivalinux.com/cooker/2006-05/msg00527.php for a small
+discussion about the pros and cons.
+

@@ -1,0 +1,79 @@
+Integration with Samba
+======================
+
+To use this DIT with Samba, the following configuration details have to be
+observed.
+
+
+Layout in LDAP
+--------------
+The following layout is the one that has to be configured in /etc/samba/smb.conf
+and /etc/smbldap-tools/smbldap.conf:
+- machine accounts: under ou=Hosts
+- user accounts: under ou=People
+- group accounts: under ou=Group
+- idmap branch: under ou=Idmap
+
+
+ldap admin dn
+-------------
+When it comes to the "ldap admin dn" /etc/samba/smb.conf configuration
+parameter, use a member of the "Account Admins" group.  For example:
+
+	ldap admin dn = uid=Account Admin,ou=System Accounts,dc=example,dc=com
+
+
+smbldap-tools
+-------------
+In /etc/smbldap-tools/smbldap_bind.conf, use the smbldap-tools user instead of
+the directory's rootdn:
+
+	masterDN="uid=smbldap-tools,ou=System Accounts,dc=example,dc=com"
+
+This user is a member of the Account Admins group. If you want to use another
+account, then make sure it's a member of this same group or else the default
+OpenLDAP ACLs won't work.
+
+
+smbldap-populate
+----------------
+The default smbldap-populate behaviour, at least with version 0.9.2, is to
+create an administrator account with the following attributes:
+- uidNumber = 0
+- gidNumber = 0
+- name: root
+- member of Domain Admins
+
+This means that a root user is created in LDAP. We advise against that and
+suggest to use this command line with smbldap-populate:
+
+ # smbldap-populate -a Administrator -k 1000 -m 512
+
+This will create an user with the name Administrator, uidNumber 1000 and
+gidNumber 512. You can also use uidNumber 500 if you want to match windows' RID
+for this kind of user, but you may already have a local user with this number.
+
+Later on the Domain Admins group could be given privileges (see "net rights
+grant" command), or your shares could use the admin users parameter.
+
+
+IDMAP
+-----
+If using IDMAP's LDAP backend in a member server, set the "ldap admin dn"
+smb.conf configuration parameter to the dn of a member of the "Idmap Admins"
+group. For example:
+
+	ldap admin dn = uid=Idmap Admin,ou=System Accounts,dc=example,dc=com
+
+In members servers, there is no need to use the full blown Account Admin user:
+the Idmap Admins group is the right one as it can only write to the ou=Idmap
+container.
+
+WARNING: there is a potential security vulnerability with using Idmap in LDAP.
+Because all domain machines need to have write access to this branch of the
+directory (and thus need a clear text password stored somewhere), a malicious
+user with root privileges on such a machine could obtain this password and
+create any identity mapping in ou=Idmap. See this thread for more information:
+
+http://lists.samba.org/archive/samba/2006-March/119196.html
+

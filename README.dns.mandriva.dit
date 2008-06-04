@@ -1,0 +1,229 @@
+Placing DNS info in LDAP
+========================
+
+Necessary steps:
+- import zone into LDAP at ou=dns branch, which is where our ACLs expect the
+  DNS information to be stored
+- configure named.conf to use LDAP for each zone that was imported
+- configure LDAP authentication parameters in named.conf (ou=dns can only be
+  read by DNS Admins and DNS Readers' members)
+
+
+Example
+-------
+
+We will import the zone below into LDAP at ou=dns:
+
+$TTL 86400
+$ORIGIN example.com.
+@		IN	SOA	aurelio.example.com. hostmaster.example.com. (
+				1		; serial number
+				10800		; refresh
+				3600		; retry
+				604800		; expires
+				86400 )		; TTL
+@		IN	NS	aurelio.example.com.
+@		IN	MX	10	mail.example.com.
+
+gateway		IN	A	10.0.1.1
+dogs		IN	A	10.0.1.7
+mail		IN	A	10.0.1.8
+aurelio		IN	A	10.0.1.9
+
+dhcp010		IN	A	10.0.1.10
+dhcp011		IN	A	10.0.1.11
+
+ns1		IN	CNAME	aurelio
+kdc		IN	CNAME	dogs
+
+localhost	IN	A	127.0.0.1
+
+;_kerberos._udp	IN	SRV	0 0 88 dogs
+
+The SRV record has to be commented because zonetoldap can't handle that yet. We
+will add it manually later.
+
+The corresponding reverse zone is this:
+
+$TTL 86400
+$ORIGIN 1.0.10.in-addr.arpa.
+@		IN	SOA	aurelio.example.com. hostmaster.example.com. (
+					1	; serial
+					10800	; refresh
+					3600	; retry
+					604800	; expires
+					86400 )	; TTL
+
+@		IN	NS	aurelio.example.com.
+
+1		IN	PTR	gateway.example.com.
+7		IN	PTR	dogs.example.com.
+8		IN	PTR	mail.example.com.
+9		IN	PTR	aurelio.example.com.
+10		IN	PTR	dhcp010.example.com.
+11		IN	PTR	dhcp011.example.com.
+
+After preparing our tree with the mandriva-setup.sh script, we can insert these
+zone files in LDAP at ou=dns (using the DNS Admin user credentials):
+
+$ zonetoldap -D 'uid=DNS Admin,ou=System Accounts,dc=example,dc=com' -W -b ou=dns,dc=example,dc=com -z example.com -f example.com.zone -h localhost -c
+Enter LDAP Password:
+$ zonetoldap -D 'uid=DNS Admin,ou=System Accounts,dc=example,dc=com' -W -b ou=dns,dc=example,dc=com -z 1.0.10.in-addr.arpa -f 1.0.10.in-addr.arpa.zone -h localhost -c
+Enter LDAP Password:
+
+This will produce the following entries under ou=dns,dc=example,dc=com:
+
+dc=com
+  dc=example
+    relativeDomainName=ns1+zoneName=example.com
+    relativeDomainName=mail+zoneName=example.com
+    relativeDomainName=localhost+zoneName=example.com
+    relativeDomainName=kdc+zoneName=example.com
+    relativeDomainName=gateway+zoneName=example.com
+    relativeDomainName=dogs+zoneName=example.com
+    relativeDomainName=dhcp011+zoneName=example.com
+    relativeDomainName=dhcp010+zoneName=example.com
+    relativeDomainName=aurelio+zoneName=example.com
+    relativeDomainName=@+zoneName=example.com
+
+dc=arpa
+  dc=in-addr
+    dc=10
+      dc=0
+        dc=1
+          relativeDomainName=9+zoneName=1.0.10.in-addr.arpa
+          relativeDomainName=8+zoneName=1.0.10.in-addr.arpa
+          relativeDomainName=7+zoneName=1.0.10.in-addr.arpa
+          relativeDomainName=11+zoneName=1.0.10.in-addr.arpa
+          relativeDomainName=10+zoneName=1.0.10.in-addr.arpa
+          relativeDomainName=1+zoneName=1.0.10.in-addr.arpa
+          relativeDomainName=@+zoneName=1.0.10.in-addr.arpa
+
+We sill have to add the SRV record from the zone file which we commented. The
+following LDIF can be used:
+
+dn: relativeDomainName=_kerberos._udp+zoneName=example.com,dc=example,dc=com,ou=dns,dc=example,dc=com
+objectClass: dNSZone
+relativeDomainName: _kerberos._udp
+zoneName: example.com
+SRVRecord: 0 0 88 dogs
+
+Let's add it:
+
+$ ldapadd -x -D 'uid=DNS Admin,ou=System Accounts,dc=example,dc=com' -W -f srv.ldif
+Enter LDAP Password:
+adding new entry "relativeDomainName=_kerberos._udp+zoneName=example.com,dc=example,dc=com,ou=dns,dc=example,dc=com"
+
+You should always review the entries produced by the zonetoldap tool, there may
+be other inconsistensies with other records.
+
+Now we have to configure named.conf to consult LDAP for these two zones. Below
+is an example file.
+
+Please remember that named runs in a chroot and won't use the system /etc/hosts
+file, but its own inside the chroot. Also avoid making loops: for example,
+don't use a server name that's in the ldap zone to specify the ldap server. In
+general, it's better to use IP addresses instead of hostnames in named.conf.
+
+options {
+	directory "/var/named";
+	allow-transfer { none; };
+	notify no;
+	allow-query { any; };
+};
+
+zone "." {
+	type hint;
+	file "named.ca";
+};
+
+zone "0.0.127.in-addr.arpa" {
+	type master;
+	file "named.local";
+};
+
+zone "example.com" {
+	type master;
+	database "ldap ldap://127.0.0.1/ou=dns,dc=example,dc=com??sub??!bindname=uid=DNS%20Reader%2cou=System%20Accounts%2cdc=example%2cdc=com,!x-bindpw=dnsreader 86400";
+};
+
+zone "1.0.10.in-addr.arpa" {
+	type master;
+	database "ldap ldap://127.0.0.1/ou=dns,dc=example,dc=com??sub??!bindname=uid=DNS%20Reader%2cou=System%20Accounts%2cdc=example%2cdc=com,!x-bindpw=dnsreader 86400";
+};
+
+key "rndc-key" {
+	algorithm hmac-md5;
+	secret "U8C6P+RjbAM2udmutlz0Vw==";
+};
+
+controls {
+	inet 127.0.0.1 port 953
+		allow { 127.0.0.1; } keys { "rndc-key"; };
+};
+
+The database parameter specifies the database to use for the zone file. In our
+case, it's LDAP.  The URL seems a bit complicated, so let's explain it. The
+generic format of the URL follows RFC 2255 and is like this:
+
+ldap://server/basedn?attributes?scope?filter?extensions
+
+So, if we want to specify a subtree search on ou=dns on 127.0.0.1 with no
+default filter, attributes or extensions, it would be like this:
+
+ldap://localhost?ou=dns,dc=example,dc=com??sub?
+
+Our DIT, however, requires authenticated searches on ou=dns, so we have to add
+extensions. Extensions are a comma-separated list of names optionally preceeded
+by "!" indicating it's usage is critical. We will use bindname and x-bindpw
+(the latter one, being not standard, is prefixed by "x-"). The URL now looks
+like this:
+
+ldap://localhost?ou=dns,dc=example,dc=com??sub??!bindname=uid=DNS Reader,ou=System Accounts,dc=example,dc=com,!x-bindpw=dnsreader
+
+Since extensions are comma-separated, we have to espace the commas in the
+binddn. We also have to escape the spaces. We do this using standard URL
+encoding formats. In our case, the URL then finally becomes:
+
+ldap://localhost/ou=dns,dc=example,dc=com??sub??!bindname=uid=DNS%20Reader%2cou=System%20Accounts%2cdc=example%2cdc=com,!x-bindpw=dnsreader
+
+Beware that /etc/named.conf has to be mode 0640 owner root:named because it
+contains two secrets now: the rndc key and the LDAP credentials used to bind to
+the directory.
+
+This is all there is to it. Now start the daemon and do some tests with dig.
+
+$ dig +short @127.0.0.1 -t mx example.com
+10 mail.example.com.
+$ dig +short @127.0.0.1 mail.example.com
+10.0.1.8
+$ dig +short @127.0.0.1 -x 10.0.1.8
+mail.example.com.
+$ dig +short @127.0.0.1 -t srv _kerberos._udp.example.com
+0 0 88 dogs.example.com.
+
+
+Delegating
+----------
+
+It's very easy to delegate DNS administrative privileges to someone else in
+your directory. Just put his/her dn in the "DNS Admins" group and he/she will
+be able to change anything under ou=dns. Here is an example command to add the
+uid=anderson,ou=People,dc=example,dc=com user to this group:
+
+$ ldapadd -x -D 'uid=DNS Admin,ou=System Accounts,dc=example,dc=com' -W
+Enter LDAP Password: secretpassword
+dn: cn=DNS Admins,ou=System Groups,dc=example,dc=com
+changetype: modify
+add: member
+member: uid=anderson,ou=People,dc=example,dc=com
+
+modifying entry "cn=DNS Admins,ou=System Groups,dc=example,dc=com"
+
+^D
+
+Now this user can add new records, delete some, change others and even create
+new zones, although for new zones to be loaded the named.conf file on the DNS
+server has to be changed.
+
+
