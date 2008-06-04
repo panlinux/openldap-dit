@@ -34,5 +34,6 @@ install-mandriva:
 		ldapdatadir=$(datadir)/openldap \
 		ldapconfdir=$(sysconfdir)/openldap \
 		ldapschemadir=$(datadir)/openldap/schema \
+		NAME=openldap-mandriva-dit \
 		install-generic
 
