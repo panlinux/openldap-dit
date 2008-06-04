@@ -5,13 +5,69 @@ if [ "`id -u`" != "0" ]; then
 	exit 1
 fi
 
-SLAPTEST="/usr/sbin/slaptest"
-SLAPADD="/usr/sbin/slapadd"
-SLAPPASSWD="/usr/sbin/slappasswd"
-slapd_conf_template="/usr/share/openldap/mandriva-dit/mandriva-dit-slapd-template.conf"
-base_ldif_template="/usr/share/openldap/mandriva-dit/mandriva-dit-base-template.ldif"
-acl_template="/usr/share/openldap/mandriva-dit/mandriva-dit-access-template.conf"
-acl_file="/etc/openldap/mandriva-dit-access.conf"
+function distro_guess()
+{
+#$ cat /etc/lsb-release 
+#DISTRIB_ID=Ubuntu
+#DISTRIB_RELEASE=8.04
+#DISTRIB_CODENAME=hardy
+#DISTRIB_DESCRIPTION="Ubuntu 8.04"
+    if [ -r "/etc/lsb-release" ]; then
+        source /etc/lsb-release
+    else
+        echo "Can't guess distro name (no /etc/lsb-release or it's not readable)"
+        exit 1
+    fi
+    if [ -z "$DISTRIB_ID" -o -z "$DISTRIB_RELEASE" ]; then
+        echo "No DISTRIB_ID or DISTRIB_RELEASE variable(s) in /etc/lsb-release"
+        exit 1
+    fi
+    DISTRIB_ID=`echo $DISTRIB_ID | tr A-Z a-z`
+    export DISTRIB_ID DISTRIB_RELEASE
+    echo $DISTRIB_ID
+    return 0
+}
+
+function mandriva_vars()
+{
+    export SLAPTEST="/usr/sbin/slaptest"
+    export SLAPADD="/usr/sbin/slapadd"
+    export SLAPPASSWD="/usr/sbin/slappasswd"
+    export SERVICE="/sbin/service ldap"
+    export slapd_conf_template="/usr/share/openldap/mandriva-dit/mandriva-dit-slapd-template.conf"
+    export slapd_conf="/etc/openldap/slapd.conf"
+    export ldap_conf="/etc/openldap/ldap.conf"
+    export base_ldif_template="/usr/share/openldap/mandriva-dit/mandriva-dit-base-template.ldif"
+    export acl_template="/usr/share/openldap/mandriva-dit/mandriva-dit-access-template.conf"
+    export acl_file="/etc/openldap/mandriva-dit-access.conf"
+    export db_dir="/var/lib/ldap"
+    export ldap_user="ldap"
+    export ldap_group="ldap"
+    return 0
+}
+
+function ubuntu_vars()
+{
+    export SLAPTEST="/usr/sbin/slaptest"
+    export SLAPADD="/usr/sbin/slapadd"
+    export SLAPPASSWD="/usr/sbin/slappasswd"
+    if [ -x /usr/sbin/invoke-rc.d ]; then
+        SERVICE="/usr/sbin/invoke-rc.d slapd"
+    else
+        SERVICE="/etc/init.d/slapd"
+    fi
+    export slapd_conf_template="/usr/share/slapd/openldap-dit/openldap-dit-slapd-template.conf"
+    export slapd_conf="/etc/ldap/slapd.conf"
+    export ldap_conf="/etc/ldap/ldap.conf"
+    export base_ldif_template="/usr/share/slapd/openldap-dit/openldap-dit-base-template.ldif"
+    export acl_template="/usr/share/slapd/openldap-dit/openldap-dit-access-template.conf"
+    export acl_file="/etc/ldap/openldap-dit-access.conf"
+    export db_dir="/var/lib/ldap"
+    export ldap_user="openldap"
+    export ldap_group="openldap"
+    return 0
+}
+
 now=`date +%s`
 myfqdn=`hostname -f`
 verbose=
@@ -79,7 +135,7 @@ function calc_suffix() {
 # $1: directory where the LDAP database is
 # output (stdout): backup dir of the previous database
 function clean_database() {
-	backupdir="/var/lib/ldap.$now"
+	backupdir="$db_dir.$now"
 	cp -a "$1" "$backupdir" 2>/dev/null
 	if [ "$?" -ne "0" ]; then
 		echo "Error, could not make a backup copy of the"
@@ -209,12 +265,12 @@ myslapdconf=`make_temp`
 echo_v "Creating slapd.conf..."
 cat $slapd_conf_template | sed -e "s/@SUFFIX@/$mysuffix/g;" > $myslapdconf
 chmod 0640 $myslapdconf
-chgrp ldap $myslapdconf
+chgrp $ldapgroup $myslapdconf
 
 # now, /etc/openldap/ldap.conf
 myldapconf=`make_temp`
-echo_v "Creating ldap.conf..."
-cat /etc/openldap/ldap.conf | \
+echo_v "Creating $ldap_conf..."
+cat $ldap_conf | \
 	sed -e "s/^BASE[[:blank:]]\+.*/BASE $mysuffix/g;\
 	s/^HOST[[:blank:]]\+.*/HOST $myfqdn/g;\
 	s@^URI[[:blank:]]\+.*@URI ldap://$myfqdn@g" \
@@ -231,7 +287,7 @@ chmod 0644 $myldapconf
 echo_v "Creating acl file..."
 cat $acl_template | sed -e "s/@SUFFIX@/$mysuffix/g" > $acl_file
 chmod 0640 $acl_file
-chgrp ldap $acl_file
+chgrp $ldap_group $acl_file
 
 # test
 echo_v "Testing configuration with temporary files..."
@@ -270,28 +326,28 @@ fi
 # let's go for real now
 echo_v "Everything ok, doing it for real now."
 echo "Stopping ldap service"
-/sbin/service ldap stop > /dev/null 2>&1 || :
+$SERVICE stop > /dev/null 2>&1 || :
 echo_v "Backing up existing files..."
-backup_db=`clean_database /var/lib/ldap`
-backup_slapd_conf=`mybackup /etc/openldap/slapd.conf`
-backup_ldap_conf=`mybackup /etc/openldap/ldap.conf`
-echo_v "Writing /etc/openldap/slapd.conf and /etc/openldap/ldap.conf..."
-cat $myslapdconf > /etc/openldap/slapd.conf; rm -f $myslapdconf
-cat $myldapconf > /etc/openldap/ldap.conf; rm -f $myldapconf
+backup_db=`clean_database $db_dir`
+backup_slapd_conf=`mybackup $slapd_conf`
+backup_ldap_conf=`mybackup $ldap_conf`
+echo_v "Writing $slapd_conf and $ldap_conf..."
+cat $myslapdconf > $slapd_conf; rm -f $myslapdconf
+cat $myldapconf > $ldap_conf; rm -f $myldapconf
 
 echo_v "Loading database..."
 $SLAPADD < $myldif
 if [ "$?" -ne "0" ]; then
 	echo "Something went wrong while initializing the database"
 	echo "Aborting. Your previous database is at $backup_db"
-	echo "Your original /etc/openldap/{slapd,ldap}.conf files"
+	echo "Your original slapd.conf and ldap.conf files"
 	echo "were backed up as $backup_slapd_conf and"
 	echo "$backup_ldap_conf, respectively."
 	exit 1
 fi
 
 echo "Finished, starting ldap service"
-/sbin/service ldap start
+$SERVICE start
 echo
 echo "Your previous database directory has been backed up as $backup_db"
 echo "All files that were backed up got the suffix \"$now\"."
