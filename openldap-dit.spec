@@ -1,3 +1,6 @@
+# XXX
+# NEEDS UPDATING
+
 Name: openldap-mandriva-dit
 Summary: Sample DIT for OpenLDAP
 Version: 0.18

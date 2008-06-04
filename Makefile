@@ -1,6 +1,7 @@
 # Makefile for openldap-dit
 
 NAME = openldap-dit
+VERSION=`cat VERSION`
 DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
@@ -38,4 +39,13 @@ install-mandriva:
 		ldapschemadir=$(datadir)/openldap/schema \
 		ldapscriptdir=$(datadir)/openldap/scripts \
 		install-generic
+
+clean:
+	rm -rf *~ $(NAME)-$(VERSION) $(NAME)-$(VERSION).tar.bz2
+
+tarball: clean
+	mkdir $(NAME)-$(VERSION)
+	cp Makefile *.spec *.sh *.conf *.schema README* VERSION TODO LICENSE *.ldif $(NAME)-$(VERSION)
+	tar cjf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
+	rm -rf $(NAME)-$(VERSION)
 
