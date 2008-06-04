@@ -1,7 +1,7 @@
 # Makefile for openldap-dit
 
 NAME = openldap-dit
-VERSION=`cat VERSION`
+VERSION = 0.19
 DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
@@ -29,7 +29,7 @@ install-generic install-ubuntu:
 	mkdir -p $(DESTDIR)$(ldapscriptdir)
 	install -m 0755 *.sh $(DESTDIR)$(ldapscriptdir)
 	install -m 0644 *.schema $(DESTDIR)$(ldapschemadir)
-	install -m 0644 README* VERSION TODO LICENSE COPYRIGHT $(DESTDIR)$(docdir)
+	install -m 0644 README* TODO LICENSE COPYRIGHT $(DESTDIR)$(docdir)
 	install -m 0644 *.ldif *.conf $(DESTDIR)$(ldapdatadir)/$(NAME)
 
 install-mandriva:
@@ -41,11 +41,17 @@ install-mandriva:
 		install-generic
 
 clean:
-	rm -rf *~ $(NAME)-$(VERSION) $(NAME)-$(VERSION).tar.bz2
+	rm -rf *~ $(NAME)-$(VERSION) $(NAME)-$(VERSION).tar.bz2 debian/$(NAME)
+	rm -f $(NAME)*$(VERSION)*deb
+	rm -f $(NAME)*$(VERSION)*dsc
+	rm -f $(NAME)*$(VERSION)*build
+	rm -f $(NAME)*$(VERSION)*changes
+	rm -f $(NAME)*$(VERSION)*tar.gz
 
 tarball: clean
 	mkdir $(NAME)-$(VERSION)
-	cp Makefile *.spec *.sh *.conf *.schema README* VERSION TODO LICENSE COPYRIGHT *.ldif $(NAME)-$(VERSION)
+	cp Makefile *.spec *.sh *.conf *.schema README* TODO LICENSE COPYRIGHT *.ldif $(NAME)-$(VERSION)
+	cp -a debian $(NAME)-$(VERSION)
 	tar cjf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
 	rm -rf $(NAME)-$(VERSION)
 
