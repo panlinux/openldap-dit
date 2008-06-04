@@ -63,7 +63,7 @@ $ORIGIN 1.0.10.in-addr.arpa.
 10		IN	PTR	dhcp010.example.com.
 11		IN	PTR	dhcp011.example.com.
 
-After preparing our tree with the mandriva-setup.sh script, we can insert these
+After preparing our tree with the openldap-dit-setup.sh script, we can insert these
 zone files in LDAP at ou=dns (using the DNS Admin user credentials):
 
 $ zonetoldap -D 'uid=DNS Admin,ou=System Accounts,dc=example,dc=com' -W -b ou=dns,dc=example,dc=com -z example.com -f example.com.zone -h localhost -c

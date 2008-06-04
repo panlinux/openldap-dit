@@ -1,11 +1,11 @@
 OpenLDAP can be used as a backend for heimdal's database, meaning principal
 accounts can be stored in LDAP. This README file will document the steps needed
-to integrate Heimdal's LDAP backend with OpenLDAP and openldap-mandriva-dit.
+to integrate Heimdal's LDAP backend with OpenLDAP and openldap-dit.
 
 Introduction
 ============
 We will start with a new realm which we will call EXAMPLE.COM. The rest of this
-text assumes that openldap-mandriva-dit is installed and that the supplied
+text assumes that openldap-dit is installed and that the supplied
 installation script was executed, either manually or via Fibric.
 
 When using the LDAP backend, it's advisable to have a script to create users,
@@ -34,7 +34,7 @@ concurrently with MIT's libraries.
 Overview of the changes
 =======================
 Here is a quick overview of the needed changes so that Heimdal can user
-OpenLDAP as its database backend, as well as use the openldap-mandriva-dit DIT:
+OpenLDAP as its database backend, as well as use the openldap-dit DIT:
 - configure Heimdal to use LDAP for its backend (krb5.conf)
 - configure OpenLDAP to accept connections from Heimdal via ldapi://
 - configure OpenLDAP to map the Heimdal ldapi:// connection to a Kerberos
@@ -86,7 +86,7 @@ dn:gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth <----
 Result: Success (0)
 
 We are going to map this dn to a more meaningful binddn via authz-regexp. The
-slapd.conf file provided with openldap-mandriva-dit already does this, but here
+slapd.conf file provided with openldap-dit already does this, but here
 it is anyway for completeness:
 
 (...)

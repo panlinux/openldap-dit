@@ -12,6 +12,7 @@ docdir = $(datadir)/doc/$(NAME)
 ldapdatadir = $(datadir)/slapd
 ldapconfdir = $(sysconfdir)/ldap
 ldapschemadir = $(ldapconfdir)/schema
+ldapscriptdir = $(ldapdatadir)
 
 install:
 	@echo "Please select among the available targets:"
@@ -24,7 +25,7 @@ install-generic install-ubuntu:
 	mkdir -p $(DESTDIR)$(ldapschemadir)
 	mkdir -p $(DESTDIR)$(ldapdatadir)/$(NAME)
 	mkdir -p $(DESTDIR)$(docdir)
-	install -m 0755 *.sh $(DESTDIR)$(ldapdatadir)/$(NAME)
+	install -m 0755 *.sh $(DESTDIR)$(ldapscriptdir)
 	install -m 0644 *.schema $(DESTDIR)$(ldapschemadir)
 	install -m 0644 README* TODO LICENSE $(DESTDIR)$(docdir)
 	install -m 0644 *.ldif *.conf $(DESTDIR)$(ldapdatadir)/$(NAME)
@@ -34,6 +35,6 @@ install-mandriva:
 		ldapdatadir=$(datadir)/openldap \
 		ldapconfdir=$(sysconfdir)/openldap \
 		ldapschemadir=$(datadir)/openldap/schema \
-		NAME=mandriva-dit \
+		ldapscriptdir=$(datadir)/openldap/scripts \
 		install-generic
 

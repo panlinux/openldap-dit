@@ -2,7 +2,7 @@ Introduction
 ============
 
 This document aims to explain the Directory Information Tree (DIT) used in the
-openldap-mandriva-dit package.
+openldap-dit package.
 
 The motivation for this new layout is the need for a better separation of
 privileges regarding access to the information stored in the directory. The
@@ -173,7 +173,7 @@ running "smbpasswd -a foo", the "foo" user account will only be created if
 samba can find the corresponding unix attributes.  The same for group mappings
 and machine accounts.
 
-Earlier versions of openldap-mandriva-dit had two separate privilege groups:
+Earlier versions of openldap-dit had two separate privilege groups:
 one for Unix accounts and another for Samba accounts. This complicated ACLs,
 and it was worse when we later added Kerberos Admins to the mix because they
 also had to touch some of the account-related attributes.
@@ -252,15 +252,15 @@ accounts, the ACLs would have to be changed manually.
 The installation script
 =======================
 
-The openldap-mandriva-dit package contains a shell script which can be used to
+The openldap-dit package contains a shell script which can be used to
 install the accounts and ACLs described in this document. The script is
-installed at /usr/share/openldap/scripts/mandriva-dit-setup.sh and performs the
+installed at /usr/share/openldap/scripts/openldap-dit-setup.sh and performs the
 following:
 - asks the DNS domain (suggesting whatever was auto-detected)
 - constructs the top-level directory entry from this domain using dc style
   attributes
 - creates and imports an ldif file with the accounts and groups described here
-- installs new slapd.conf and mandriva-dit-access.conf files (making backups of
+- installs new slapd.conf and openldap-dit-access.conf files (making backups of
   the previous ones) with the default ACLs and other useful configurations
   (like cache)
 - loads the ldif file, backing up the previous database directory
@@ -277,13 +277,13 @@ The installation script will overwrite some OpenLDAP files and directories.
 Specifically, it will backup and overwrite the following:
 - /etc/openldap/slapd.conf
 - /etc/openldap/ldap.conf
-- /etc/openldap/mandriva-dit-access.conf (THIS ONE HAS NO BACKUP CURRENTLY)
+- /etc/openldap/openldap-dit-access.conf (THIS ONE HAS NO BACKUP CURRENTLY)
 - /var/lib/ldap contents
 
 So, after you are satisfied that nothing important will be lost, run the
 script. Below is a sample run using the example.com domain:
 
-[root@cs4 ~]# /usr/share/openldap/scripts/mandriva-dit-setup.sh
+[root@cs4 ~]# /usr/share/openldap/scripts/openldap-dit-setup.sh
 Please enter your DNS domain name [conectiva]:
 example.com
 
