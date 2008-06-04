@@ -28,7 +28,7 @@ install-generic install-ubuntu:
 	mkdir -p $(DESTDIR)$(ldapscriptdir)
 	install -m 0755 *.sh $(DESTDIR)$(ldapscriptdir)
 	install -m 0644 *.schema $(DESTDIR)$(ldapschemadir)
-	install -m 0644 README* TODO LICENSE $(DESTDIR)$(docdir)
+	install -m 0644 README* VERSION TODO LICENSE $(DESTDIR)$(docdir)
 	install -m 0644 *.ldif *.conf $(DESTDIR)$(ldapdatadir)/$(NAME)
 
 install-mandriva:
