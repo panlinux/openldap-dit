@@ -1,0 +1,22 @@
+openldap-dit is a fork from openldap-mandriva-dit, which is hosted at
+http://svn.mandriva.com/svn/packages/corporate/cs4/devel/openldap-mandriva-dit/
+and has a wiki page at http://wiki.mandriva.com/en/Projects/OpenLDAP_DIT.
+
+I, Andreas Hasenack, am the original author of openldap-mandriva-dit and have
+created this fork after I left Mandriva and started working for Canonical
+(March 2008). The main reasons for the fork were:
+- I wanted to keep working on it, but needed a hosting server/service
+- I wanted to make it compatible with more distributions (Ubuntu being one
+  of them, of course)
+- I am the original author and no one else ever committed to the project
+
+In this fork I removed the "mandriva" name from script names and paths,
+but only to make it more distribution agnostic.
+
+I thank Mandriva for letting me work on it while I was their employee. The
+original project is their copyright. I hope to submit these changes back to
+them.
+
+The license stays the same as with the original distribution from which it
+was forked at version 0.18: GPLv2
+
