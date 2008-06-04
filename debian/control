@@ -1,0 +1,14 @@
+Source: openldap-dit
+Section: net
+Priority: extra
+Maintainer: Andreas Hasenack <andreas@canonical.com>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.3
+
+Package: openldap-dit
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Sample DIT for OpenLDAP
+ This package contains a sample DIT for OpenLDAP which can be
+ used together with many services and has a group based access
+ control.
