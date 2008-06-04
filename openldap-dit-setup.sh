@@ -378,6 +378,10 @@ if [ "$?" -ne "0" ]; then
 	exit 1
 fi
 
+# forcibly adjust ownership of the DB files, as the Debian/Ubuntu
+# initscript doesn't do it automatically
+chown -R $ldap_user:$ldap_group $db_dir/*
+
 echo "Finished, starting ldap service"
 $SERVICE start
 echo
