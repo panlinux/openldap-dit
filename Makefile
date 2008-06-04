@@ -31,8 +31,8 @@ install-generic install-ubuntu:
 
 install-mandriva:
 	@make \
-		ldapdatadir=$(DESTDIR)$(datadir)/openldap \
-		ldapconfdir=$(DESTDIR)$(sysconfdir)/openldap \
-		ldapschemadir=$(DESTDIR)$(datadir)/openldap/schema \
+		ldapdatadir=$(datadir)/openldap \
+		ldapconfdir=$(sysconfdir)/openldap \
+		ldapschemadir=$(datadir)/openldap/schema \
 		install-generic
 
