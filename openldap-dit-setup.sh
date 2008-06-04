@@ -284,7 +284,7 @@ myslapdconf=`make_temp`
 echo_v "Creating slapd.conf..."
 cat $slapd_conf_template | sed -e "s/@SUFFIX@/$mysuffix/g;" > $myslapdconf
 chmod 0640 $myslapdconf
-chgrp $ldapgroup $myslapdconf
+chgrp $ldap_group $myslapdconf
 
 # now, /etc/openldap/ldap.conf
 myldapconf=`make_temp`
