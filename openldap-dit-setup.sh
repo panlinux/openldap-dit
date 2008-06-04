@@ -35,11 +35,15 @@ function mandriva_setup()
     export SLAPPASSWD="/usr/sbin/slappasswd"
     export SERVICE="/sbin/service ldap"
     export slapd_conf_template="/usr/share/openldap/openldap-dit/openldap-dit-slapd-template.conf"
-    export slapd_conf="/etc/openldap/slapd.conf"
-    export ldap_conf="/etc/openldap/ldap.conf"
+    export ldap_conf_dir="/etc/openldap"
+    export slapd_conf="$ldap_conf_dir/slapd.conf"
+    export schema_dir="/usr/share/openldap/schema"
+    export ldap_libdir="/usr/lib/openldap"
+    export ldap_conf="$ldap_conf_dir/ldap.conf"
     export base_ldif_template="/usr/share/openldap/openldap-dit/openldap-dit-base-template.ldif"
     export acl_template="/usr/share/openldap/openldap-dit/openldap-dit-access-template.conf"
-    export acl_file="/etc/openldap/openldap-dit-access.conf"
+    export acl_file="$ldap_conf_dir/openldap-dit-access.conf"
+    export run_dir="/var/run/ldap"
     export db_dir="/var/lib/ldap"
     export ldap_user="ldap"
     export ldap_group="ldap"
@@ -64,11 +68,15 @@ function ubuntu_setup()
         SERVICE="/etc/init.d/slapd"
     fi
     export slapd_conf_template="/usr/share/slapd/openldap-dit/openldap-dit-slapd-template.conf"
-    export slapd_conf="/etc/ldap/slapd.conf"
-    export ldap_conf="/etc/ldap/ldap.conf"
+    export ldap_conf_dir="/etc/ldap"
+    export slapd_conf="$ldap_conf_dir/slapd.conf"
+    export schema_dir="$ldap_conf_dir/schema"
+    export ldap_libdir="/usr/lib/ldap"
+    export ldap_conf="$ldap_conf_dir/ldap.conf"
     export base_ldif_template="/usr/share/slapd/openldap-dit/openldap-dit-base-template.ldif"
     export acl_template="/usr/share/slapd/openldap-dit/openldap-dit-access-template.conf"
-    export acl_file="/etc/ldap/openldap-dit-access.conf"
+    export acl_file="$ldap_conf_dir/openldap-dit-access.conf"
+    export run_dir="/var/run/slapd"
     export db_dir="/var/lib/ldap"
     export ldap_user="openldap"
     export ldap_group="openldap"
@@ -282,7 +290,12 @@ fi
 myslapdconf=`make_temp`
 
 echo_v "Creating slapd.conf..."
-cat $slapd_conf_template | sed -e "s/@SUFFIX@/$mysuffix/g;" > $myslapdconf
+cat $slapd_conf_template | sed -e "\
+    s/@SUFFIX@/$mysuffix/g;\
+    s,@SCHEMADIR@,$schema_dir,g;\
+    s,@LDAPCONFDIR@,$ldap_conf_dir,g;\
+    s,@RUNDIR@,$run_dir,g;\
+    s,@LDAPLIBDIR@,$ldap_libdir,g;" > $myslapdconf
 chmod 0640 $myslapdconf
 chgrp $ldap_group $myslapdconf
 
