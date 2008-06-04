@@ -28,7 +28,7 @@ function distro_guess()
     return 0
 }
 
-function mandriva_vars()
+function mandriva_setup()
 {
     export SLAPTEST="/usr/sbin/slaptest"
     export SLAPADD="/usr/sbin/slapadd"
@@ -43,10 +43,17 @@ function mandriva_vars()
     export db_dir="/var/lib/ldap"
     export ldap_user="ldap"
     export ldap_group="ldap"
+
+    for package in openldap-server openldap-client; do
+        if ! rpm -q $package 2>/dev/null; then
+            echo "Error, please install package $package"
+        fi
+    done
+
     return 0
 }
 
-function ubuntu_vars()
+function ubuntu_setup()
 {
     export SLAPTEST="/usr/sbin/slaptest"
     export SLAPADD="/usr/sbin/slapadd"
@@ -65,6 +72,16 @@ function ubuntu_vars()
     export db_dir="/var/lib/ldap"
     export ldap_user="openldap"
     export ldap_group="openldap"
+
+    mkdir -p `dirname $slapd_conf_template`
+
+    for package in slapd ldap-utils; do
+        if ! dpkg -l $package 2>/dev/null | grep -q ^ii; then
+            echo "Error, please install package $package"
+            exit 1
+        fi
+    done
+
     return 0
 }
 
@@ -75,6 +92,8 @@ noprompt=
 if [ -z "$myfqdn" ]; then
 	myfqdn="localhost"
 fi
+distro=`distro_guess`
+${distro}_setup
 
 function usage() {
 	echo "Usage:"
