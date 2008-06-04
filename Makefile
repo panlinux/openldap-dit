@@ -1,0 +1,1 @@
+# Makefile for openldap-dit
