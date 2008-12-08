@@ -287,7 +287,7 @@ fi
 # let's do it
 if [ ! -d "$run_dir" ]; then
         mkdir -p -m 0755 $run_dir
-        chown $ldap_user:$ldap_group
+        chown $ldap_user:$ldap_group $run_dir
 fi
 
 # first, slapd.conf
