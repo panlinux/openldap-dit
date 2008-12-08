@@ -285,6 +285,10 @@ if [ -z "$noprompt" ]; then
 fi
 
 # let's do it
+if [ ! -d "$run_dir" ]; then
+        mkdir -p -m 0755 $run_dir
+        chown $ldap_user:$ldap_group
+fi
 
 # first, slapd.conf
 myslapdconf=`make_temp`
