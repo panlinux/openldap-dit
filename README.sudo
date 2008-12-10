@@ -1,6 +1,6 @@
 Sudo has support for storing its rules in a branch in an LDAP tree. See the
-README.LDAP file in sudo's documentation directory for specific details. Here
-we will show some basic examples.
+README.LDAP file in sudo-ldap's documentation directory for specific details.
+Here we will show some basic examples.
 
 
 Importing data
@@ -21,7 +21,7 @@ Converting this file into an LDIF file that can be imported at the
 ou=sudoers,dc=example,dc=com branch is done like this:
 
 # export SUDOERS_BASE=ou=sudoers,dc=example,dc=com
-# sudoers2ldif /etc/sudoers > sudoers.ldif
+# perl /usr/share/doc/sudo-ldap/sudoers2ldif /etc/sudoers > sudoers.ldif
 
 The resulting ldif file contains:
 dn: cn=defaults,ou=sudoers,dc=example,dc=com
