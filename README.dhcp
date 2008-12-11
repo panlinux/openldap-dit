@@ -14,7 +14,7 @@ The dhcp-common package has a contrib script which can be used to import an
 existing /etc/dhcp3/dhcpd.conf file into LDAP. The script is located at the
 documentation directory inside the contrib directory:
 
-/usr/share/doc/dhcp-common-<version>/contrib/dhcpd-conf-to-ldap.pl
+/usr/share/doc/dhcp3-server-ldap/dhcpd-conf-to-ldap.pl.gz
 
 More experienced administrators wanting to create an LDIF file from scratch
 should consult the README.ldap file mentioned before.
@@ -46,7 +46,7 @@ configuration.  Please note that this script has not yet been tested with all
 possible dhcp configuration scenarios. Please always review the resulting LDIF
 file.
 
-$ perl /usr/share/doc/dhcp-common-3.0.3/contrib/dhcpd-conf-to-ldap.pl \
+$ perl /usr/share/doc/dhcp3-server-ldap/dhcpd-conf-to-ldap.pl \
 --basedn "ou=dhcp,dc=example,dc=com" \
 --dhcpdn "cn=DHCP Config,ou=dhcp,dc=example,dc=com" \
 --conf /etc/dhcpd.conf --server cs4.example.com --ldif dhcpd.ldif
