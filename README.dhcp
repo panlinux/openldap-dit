@@ -5,8 +5,8 @@ steps:
 
 Please also read the README.ldap file in the documentation directory.
 
-NOTE: the Ubuntu dhcp server package does not support LDAP yet, so this won't
-work.
+NOTE: you will need to use Intrepid or higher to have LDAP support in the
+dhcp server package.
 
 Importing data
 --------------
