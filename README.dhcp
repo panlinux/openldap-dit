@@ -3,8 +3,10 @@ steps:
 - import dhcpd.conf data into ou=dhcp
 - configure /etc/dhcp3/dhcpd.conf to use LDAP (with or without authentication)
 
-Please also read the README.ldap file in the documentation directory of the
-dhcp-common package.
+Please also read the README.ldap file in the documentation directory.
+
+NOTE: the Ubuntu dhcp server package does not support LDAP yet, so this won't
+work.
 
 Importing data
 --------------
