@@ -1,7 +1,7 @@
 This DIT has support for DHCP information stored under ou=dhcp. Necessary
 steps:
 - import dhcpd.conf data into ou=dhcp
-- configure /etc/dhcpd.conf to use LDAP (with or without authentication)
+- configure /etc/dhcp3/dhcpd.conf to use LDAP (with or without authentication)
 
 Please also read the README.ldap file in the documentation directory of the
 dhcp-common package.
@@ -9,7 +9,7 @@ dhcp-common package.
 Importing data
 --------------
 The dhcp-common package has a contrib script which can be used to import an
-existing /etc/dhcpd.conf file into LDAP. The script is located at the
+existing /etc/dhcp3/dhcpd.conf file into LDAP. The script is located at the
 documentation directory inside the contrib directory:
 
 /usr/share/doc/dhcp-common-<version>/contrib/dhcpd-conf-to-ldap.pl
@@ -115,8 +115,8 @@ adding new entry "cn=test009.example.com, cn=172.16.10.0, cn=DHCP Config,ou=dhcp
 
 Final adjustments to dhcpd.conf
 -------------------------------
-We can now remove most of the configuration from /etc/dhcpd.conf, leaving only
-the LDAP part.  This results in the following file:
+We can now remove most of the configuration from /etc/dhcp3/dhcpd.conf, leaving
+only the LDAP part.  This results in the following file:
 
 ldap-server "cs4.conectiva";
 ldap-port 389;
