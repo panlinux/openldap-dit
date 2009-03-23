@@ -8,6 +8,10 @@ Necessary steps:
 - configure LDAP authentication parameters in named.conf (ou=dns can only be
   read by DNS Admins and DNS Readers' members)
 
+NOTE: Ubuntu doesn't ship bind with the LDAP patch applied, so these
+instructions won't work unless you apply the patch and rebuild the package
+manually.
+
 
 Example
 -------

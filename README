@@ -275,17 +275,16 @@ Enough with the theory: how to use this?
 
 The installation script will overwrite some OpenLDAP files and directories.
 Specifically, it will backup and overwrite the following:
-- /etc/openldap/slapd.conf
-- /etc/openldap/ldap.conf
-- /etc/openldap/openldap-dit-access.conf (THIS ONE HAS NO BACKUP CURRENTLY)
+- /etc/ldap/slapd.conf
+- /etc/ldap/ldap.conf
+- /etc/ldap/openldap-dit-access.conf (THIS ONE HAS NO BACKUP CURRENTLY)
 - /var/lib/ldap contents
 
 So, after you are satisfied that nothing important will be lost, run the
 script. Below is a sample run using the example.com domain:
 
-[root@cs4 ~]# /usr/share/openldap/scripts/openldap-dit-setup.sh
-Please enter your DNS domain name [conectiva]:
-example.com
+root@nsn2:~# /usr/share/slapd/openldap-dit-setup.sh 
+Please enter your DNS domain name [example.com]:
 
 
 Administrator account
@@ -294,26 +293,26 @@ The administrator account for this directory is
 uid=LDAP Admin,ou=System Accounts,dc=example,dc=com
 
 Please choose a password for this account:
-New password:
-Re-enter new password:
+New password: 
+Re-enter new password: 
 
 
 Summary
 =======
 
-Domain:      example.com
-LDAP suffix: dc=example,dc=com
+Domain:        example.com
+LDAP suffix:   dc=example,dc=com
+Administrator: uid=LDAP Admin,ou=System Accounts,dc=example,dc=com
 
 Confirm? (Y/n)
-Y
+
 config file testing succeeded
 Stopping ldap service
 Finished, starting ldap service
-Running /usr/bin/db_recover on /var/lib/ldap
-removing /var/lib/ldap/alock
-Starting slapd (ldap + ldaps):                                  [  OK  ]
+Starting OpenLDAP: slapd.
 
-Your previous database directory has been backed up as /var/lib/ldap.1145397294
+Your previous database directory has been backed up as /var/lib/ldap.1228858266
+All files that were backed up got the suffix "1228858266".
 
 
 Now, fire up an LDAP browser and use the LDAP Admin account shown above to set
