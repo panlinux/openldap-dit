@@ -1,7 +1,7 @@
 # Makefile for openldap-dit
 
 NAME = openldap-dit
-VERSION = 0.19
+VERSION = 0.20
 DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
@@ -50,7 +50,7 @@ clean:
 
 tarball: clean
 	mkdir $(NAME)-$(VERSION)
-	cp Makefile *.spec *.sh *.conf *.schema README* TODO LICENSE COPYRIGHT *.ldif $(NAME)-$(VERSION)
+	cp -a Makefile *.spec *.sh *.conf schemas doc TODO LICENSE COPYRIGHT acls databases overlays $(NAME)-$(VERSION)
 	cp -a debian $(NAME)-$(VERSION)
 	tar cjf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
 	rm -rf $(NAME)-$(VERSION)
