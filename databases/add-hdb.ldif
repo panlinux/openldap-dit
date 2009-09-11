@@ -37,22 +37,22 @@ olcDbIndex: dhcpHWAddress eq
 olcDbIndex: sudoUser eq,sub
 olcAccess: {0}to dn.subtree="@SUFFIX@"  by group/groupOfMembers/member.
  exact="cn=ldap admins,ou=system groups,@SUFFIX@" write  by group/gro
- upOfMembers/member.exact="cn=ldap replicators,ou=system groups,@SUFFIX@m"
- read  by * +0 break
+ upOfMembers/member.exact="cn=ldap replicators,ou=system groups,@SUFFIX@"
+  read  by * +0 break
 olcAccess: {1}to dn.subtree="ou=people,@SUFFIX@"  attrs=shadowLastCha
  nge  by self write  by group/groupOfMembers/member.exact="cn=account admins,ou=
  system groups,@SUFFIX@" write  by * read
 olcAccess: {2}to dn.subtree="ou=people,@SUFFIX@"  attrs=userPassword 
-  by group/groupOfMembers/member.exact="cn=account admins,ou=system groups,
+   by group/groupOfMembers/member.exact="cn=account admins,ou=system groups,
   @SUFFIX@" write  by self write  by anonymous auth  by * none
 olcAccess: {3}to dn.subtree="@SUFFIX@"  attrs=userPassword  by self w
  rite  by anonymous auth  by * none
 olcAccess: {4}to dn.subtree="@SUFFIX@"  attrs=krb5Key  by self write 
   by group/groupOfMembers/member.exact="cn=account admins,ou=system groups,
-  @SUFFIX@" write  by anonymous auth  by * none
+ @SUFFIX@" write  by anonymous auth  by * none
 olcAccess: {5}to dn.subtree="ou=password policies,@SUFFIX@"  by group
  /groupOfMembers/member.exact="cn=account admins,ou=system groups,@SUFFIX@" write
- by * read
+  by * read
 olcAccess: {6}to dn.subtree="@SUFFIX@"  attrs=sambaLMPassword,sambaNT
  Password  by group/groupOfMembers/member.exact="cn=account admins,ou=system gro
  ups,@SUFFIX@" write  by anonymous auth  by self write  by * none
@@ -61,12 +61,12 @@ olcAccess: {7}to dn.subtree="@SUFFIX@"  attrs=sambaPasswordHistory,pw
  ,ou=system groups,@SUFFIX@" write  by * none
 olcAccess: {8}to dn.subtree="@SUFFIX@"  attrs=pwdReset  by group/grou
  pOfMembers/member.exact="cn=account admins,ou=system groups,@SUFFIX@" 
- write  by * read
+  write  by * read
 olcAccess: {9}to dn.regex="^cn=[^,]+,ou=(System Groups|Group),@SUFFIX@$"  
- attrs=member  by dnattr=owner write  by * +0 break
+  attrs=member  by dnattr=owner write  by * +0 break
 olcAccess: {10}to dn.subtree="ou=people,@SUFFIX@"  attrs=carLicense,h
  omePhone,homePostalAddress,mobile,pager,telephoneNumber  by self write  by * 
- +0 break
+  +0 break
 olcAccess: {11}to dn.regex="^([^,]+,)?ou=(People|Group|Hosts),@SUFFIX@$"
   attrs=children,entry  by group/groupOfMembers/member.exact="cn=account adm
  ins,ou=system groups,@SUFFIX@" write  by * +0 break
@@ -79,17 +79,17 @@ olcAccess: {13}to dn.regex="^(sambaDomainName=[^,]+,)?@SUFFIX@$"  att
  d
 olcAccess: {14}to dn.regex="^(sambaSID=[^,]+,)?ou=Idmap,@SUFFIX@$"  a
  ttrs=children,entry,@sambaIdmapEntry  by group/groupOfMembers/member.exact="cn=
- account admins,ou=system groups,@SUFFIX@" write  by group/gropuOfMembers
+ account admins,ou=system groups,@SUFFIX@" write  by group/groupOfMembers
  /member.exact="cn=idmap admins,ou=system groups,@SUFFIX@" write  b
  y * read
 olcAccess: {15}to dn.regex="^(.*,)?ou=Address Book,@SUFFIX@"  attrs=c
  hildren,entry,@inetOrgPerson  by group/groupOfMembers/member.exact="cn=address 
- book admins,ou=system groups,@SUFFIX@" write  by * read
+  book admins,ou=system groups,@SUFFIX@" write  by * read
 olcAccess: {16}to dn.subtree="ou=dhcp,@SUFFIX@"  attrs=children,entry
  ,@dhcpService,@dhcpServer,@dhcpSharedNetwork,@dhcpSubnet,@dhcpPool,@dhcpGroup
  ,@dhcpHost,@dhcpClass,@dhcpSubClass,@dhcpOptions,@dhcpLeases,@dhcpLog  by gro
  up/groupOfMembers/member.exact="cn=dhcp admins,ou=system groups,@SUFFIX@"
- write  by group/groupOfMembers/member.exact="cn=dhcp readers,ou=system grou
+  write  by group/groupOfMembers/member.exact="cn=dhcp readers,ou=system grou
  ps,@SUFFIX@" read  by * read
 olcAccess: {17}to dn.regex="^([^,]+,)?ou=sudoers,@SUFFIX@$"  attrs=ch
  ildren,entry,@sudoRole  by group/groupOfMembers/member.exact="cn=sudo admins,ou
