@@ -22,9 +22,6 @@
 # for complete references.
 #
 #
-# modified posixGroup to be auxiliary
-# andreas@canonical.com
-
 # adapted from http://tools.ietf.org/draft/draft-howard-rfc2307bis/draft-howard-rfc2307bis-02.txt
 # some changes are not here. For example, the ordering rules for uidNumber and the like
 
