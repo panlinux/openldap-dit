@@ -78,7 +78,7 @@ Configuring sudo
 Now we have just to configure sudo to actually use our LDAP server for its
 configuration (or just part of the configuration).
 
-The sudo package uses /etc/ldap.conf for the ldap configuration. The most
+The sudo package uses /etc/sudo-ldap.conf for the ldap configuration. The most
 important setting in this file is sudoers_base, which we must point to
 ou=sudoers,dc=example,dc=com in our case. By default, anonymous searches of
 ou=sudoers are allowed, so we don't have to worry about authentication
