@@ -40,11 +40,12 @@ function ubuntu_setup()
         SERVICE="/etc/init.d/slapd"
     fi
     export root="/usr/share/slapd/openldap-dit"
-    export databases="$root/databases"
-    export schemas="$root/schemas"
-    export acls="$root/acls"
-    export modules="$root/modules"
-    export overlays="$root/overlays"
+    export databases_dir="$root/databases"
+    export schemas_dir="$root/schemas"
+    export acls_dir="$root/acls"
+    export modules_dir="$root/modules"
+    export overlays_dir="$root/overlays"
+    export contents_dir="$root/contents"
 
     for package in slapd ldap-utils libsasl2-modules; do
         if ! dpkg -l $package 2>/dev/null | grep -q ^ii; then
@@ -157,31 +158,86 @@ function check_result() {
     fi
 }
 
+# $1: exit status
+# $2: file used
+function abort_if_fail() {
+    if [ "$1" -ne "0" ]; then
+        echo "Error using \"$2\", aborting"
+        exit 1
+    fi
+    return 0
+}
+
+# $1: descriptive text of what is being added
+# $2: directory where the files are
+# $3: optional sed expression to use
+function add_ldif() {
+    echo "Adding $1..."
+    for n in $2/*.ldif; do
+        if [ -z "$3" ]; then
+            cat "$n" | $LDAPADD
+        else
+            cat "$n" | sed -e "$3" | $LDAPADD
+        fi
+        if [ "$?" -ne "0" ]; then
+            echo "Error using \"$n\", aborting"
+            exit 1
+        fi
+    done
+    return 0
+}
+
+# $1: descriptive text of what is being added
+# $2: directory where the files are
+# $3: optional sed expression to use
+function modify_ldif() {
+    echo "Modifying $1..."
+    for n in $2/*.ldif; do
+        if [ -z "$3" ]; then
+            cat "$n" | $LDAPMODIFY
+        else
+            cat "$n" | sed -e "$3" | $LDAPMODIFY
+        fi
+        if [ "$?" -ne "0" ]; then
+            echo "Error using \"$n\", aborting"
+            exit 1
+        fi
+    done
+    return 0
+}
+
 function add_modules() {
+    add_ldif "modules" "$modules_dir"
     return 0
 }
 
 function add_schemas() {
+    add_ldif "schemas" "$schemas_dir"
     return 0
 }
 
 function add_db () {
+    add_ldif "database" "$databases_dir" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
 function modify_frontend_acls() {
+    modify_ldif "Frontend ACLs" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
 function modify_config_acls() {
+    modify_ldif "Config ACLs" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
 function add_overlays() {
+    add_ldif "overlays" "$overlays_dir"
     return 0
 }
 
 function populate_db() {
+    add_ldif "populated database" "$contents_dir" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
