@@ -1,9 +1,9 @@
 # base tree
 dn: @SUFFIX@
-dc: example
+dc: @DC@
 objectClass: domain
 objectClass: domainRelatedObject
-associatedDomain: example.com
+associatedDomain: @DOMAIN@
 
 dn: ou=People,@SUFFIX@
 ou: People

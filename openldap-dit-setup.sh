@@ -233,7 +233,7 @@ function add_overlays() {
 }
 
 function populate_db() {
-    add_ldif "populated database" "$contents_dir" "s/@SUFFIX@/$mysuffix/g"
+    add_ldif "populated database" "$contents_dir" "s/@SUFFIX@/$mysuffix/g;s/@DC@/${mydomain%%.[a-zA-Z0-9]*}/g;s/@DOMAIN@/${mydomain}/g"
     return 0
 }
 
