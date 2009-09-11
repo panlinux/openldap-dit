@@ -222,7 +222,7 @@ function add_db () {
 }
 
 function modify_acls() {
-    modify_ldif "Fixing ACLs" "$acls_dir""s/@SUFFIX@/$mysuffix/g"
+    modify_ldif "ACLs" "$acls_dir" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
