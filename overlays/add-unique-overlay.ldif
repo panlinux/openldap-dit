@@ -1,0 +1,11 @@
+dn: olcOverlay=unique,olcDatabase={1}hdb,cn=config
+objectClass: olcUniqueConfig
+objectClass: olcOverlayConfig
+objectClass: olcConfig
+objectClass: top
+olcOverlay: unique
+olcUniqueURI: ldap:///ou=People,@SUFFIX@?uidNumber
+ ?one?(objectClass=posixAccount)
+olcUniqueURI: ldap:///ou=Group,@SUFFIX@?gidNumber?one?(objectClass=po
+ sixGroup)
+

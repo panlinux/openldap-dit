@@ -5,6 +5,11 @@ if [ "`id -u`" != "0" ]; then
 	exit 1
 fi
 
+LDAPWHOAMI="ldapwhoami -H ldapi:/// -Y EXTERNAL -Q"
+LDAPADD="ldapadd -H ldapi:/// -Y EXTERNAL -Q"
+LDAPMODIFY="ldapmodify -H ldapi:/// -Y EXTERNAL -Q"
+LDAPPASSWD="ldappasswd -H ldapi:/// -Y EXTERNAL -Q"
+
 function distro_guess()
 {
 #$ cat /etc/lsb-release 
@@ -28,62 +33,22 @@ function distro_guess()
     return 0
 }
 
-function mandriva_setup()
-{
-    export SLAPTEST="/usr/sbin/slaptest"
-    export SLAPADD="/usr/sbin/slapadd"
-    export SLAPPASSWD="/usr/sbin/slappasswd"
-    export SERVICE="/sbin/service ldap"
-    export slapd_conf_template="/usr/share/openldap/openldap-dit/openldap-dit-slapd-template.conf"
-    export ldap_conf_dir="/etc/openldap"
-    export slapd_conf="$ldap_conf_dir/slapd.conf"
-    export schema_dir="/usr/share/openldap/schema"
-    export ldap_libdir="/usr/lib/openldap"
-    export ldap_conf="$ldap_conf_dir/ldap.conf"
-    export base_ldif_template="/usr/share/openldap/openldap-dit/openldap-dit-base-template.ldif"
-    export acl_template="/usr/share/openldap/openldap-dit/openldap-dit-access-template.conf"
-    export acl_file="$ldap_conf_dir/openldap-dit-access.conf"
-    export run_dir="/var/run/ldap"
-    export db_dir="/var/lib/ldap"
-    export ldap_user="ldap"
-    export ldap_group="ldap"
-
-    for package in openldap-server openldap-client; do
-        if ! rpm -q $package 2>/dev/null; then
-            echo "Error, please install package $package"
-        fi
-    done
-
-    return 0
-}
-
 function ubuntu_setup()
 {
-    export SLAPTEST="/usr/sbin/slaptest"
-    export SLAPADD="/usr/sbin/slapadd"
-    export SLAPPASSWD="/usr/sbin/slappasswd"
     if [ -x /usr/sbin/invoke-rc.d ]; then
         SERVICE="/usr/sbin/invoke-rc.d slapd"
     else
         SERVICE="/etc/init.d/slapd"
     fi
-    export slapd_conf_template="/usr/share/slapd/openldap-dit/openldap-dit-slapd-template.conf"
-    export ldap_conf_dir="/etc/ldap"
-    export slapd_conf="$ldap_conf_dir/slapd.conf"
-    export schema_dir="$ldap_conf_dir/schema"
-    export ldap_libdir="/usr/lib/ldap"
-    export ldap_conf="$ldap_conf_dir/ldap.conf"
-    export base_ldif_template="/usr/share/slapd/openldap-dit/openldap-dit-base-template.ldif"
-    export acl_template="/usr/share/slapd/openldap-dit/openldap-dit-access-template.conf"
-    export acl_file="$ldap_conf_dir/openldap-dit-access.conf"
-    export run_dir="/var/run/slapd"
-    export db_dir="/var/lib/ldap"
-    export ldap_user="openldap"
-    export ldap_group="openldap"
+    export root="/usr/share/slapd/openldap-dit"
+    export databases_dir="$root/databases"
+    export schemas_dir="$root/schemas"
+    export acls_dir="$root/acls"
+    export modules_dir="$root/modules"
+    export overlays_dir="$root/overlays"
+    export contents_dir="$root/contents"
 
-    mkdir -p `dirname $slapd_conf_template`
-
-    for package in slapd ldap-utils; do
+    for package in slapd ldap-utils libsasl2-modules; do
         if ! dpkg -l $package 2>/dev/null | grep -q ^ii; then
             echo "Error, please install package $package"
             exit 1
@@ -92,16 +57,6 @@ function ubuntu_setup()
 
     return 0
 }
-
-now=`date +%s`
-myfqdn=`hostname -f`
-verbose=
-noprompt=
-if [ -z "$myfqdn" ]; then
-	myfqdn="localhost"
-fi
-distro=`distro_guess`
-${distro}_setup
 
 function usage() {
 	echo "Usage:"
@@ -132,19 +87,6 @@ function detect_domain() {
 	return 0
 }
 
-# output: stdout: name of temporary file
-# *exits* if error
-function make_temp() {
-	tmpfile=`mktemp ${TMP:-/tmp}/openldap-dit.XXXXXXXXXXXX`
-	if [ -f "$tmpfile" ]; then
-		echo "$tmpfile"
-		return 0
-	else
-		echo "error while making temporary file" >&2
-		exit 1
-	fi
-}
-
 # $1: domain
 # returns standard dc=foo,dc=bar suffix on stdout
 function calc_suffix() {
@@ -158,38 +100,161 @@ function calc_suffix() {
 	return 0
 }
 
-
-# $1: directory where the LDAP database is
-# output (stdout): backup dir of the previous database
-function clean_database() {
-	backupdir="$db_dir.$now"
-	cp -a "$1" "$backupdir" 2>/dev/null
-	if [ "$?" -ne "0" ]; then
-		echo "Error, could not make a backup copy of the"
-		echo "current LDAP database, aborting..."
-		echo
-		echo "(not enough disk space?)"
-		echo
-		exit 1
-	fi
-	rm -f "$1"/{*.bdb,log.*,__*,alock}
-	echo "$backupdir"
-	return 0
+# test if sasl external works and maps us to something
+function test_auth() {
+    out=$($LDAPWHOAMI)
+    [ "$?" -ne "0" ] && return 1
+    # XXX - too specific for ubuntu's ldap deployment...
+    # a better test would be slapacl, but I couldn't get it
+    # to work
+    if [ "$out" = "dn:cn=localroot,cn=config" ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
-# $1: *file* to be backed up
-# output (stdout): backup filename
-function mybackup() {
-	if [ ! -f "$1" ]; then
-		echo "Internal error, $1 has to be a file" >&2
-		echo "Aborting" >&2
-		exit 1
-	fi
-	newname="$1.$now"
-	cp -a "$1" "$newname"
-	echo "$newname"
-	return 0
+function get_admin_password() {
+	echo
+	echo "Administrator account"
+	echo
+	echo "The administrator account for this directory is"
+	echo "uid=LDAP Admin,ou=System Accounts,$mysuffix"
+	echo
+	echo "Please choose a password for this account:"
+	while /bin/true; do
+        echo -n "New password: "
+        stty -echo
+        read pass1
+        stty echo
+        echo
+        if [ -z "$pass1" ]; then
+            echo "Error, password cannot be empty"
+            echo
+            continue
+        fi
+        echo -n "Repeat new password: "
+        stty -echo
+        read pass2
+        stty echo
+        echo
+        if [ "$pass1" != "$pass2" ]; then
+            echo "Error, passwords don't match"
+            echo
+            continue
+        fi
+        pass="$pass1"
+        break
+	done
+    if [ -n "$pass" ]; then
+        return 0
+    fi
+    return 1
 }
+
+function check_result() {
+    if [ "$1" -ne "0" ]; then
+        echo "ERROR, aborting"
+        exit 1
+    else
+        echo "Succeeded!"
+    fi
+}
+
+# $1: descriptive text of what is being added
+# $2: directory where the files are
+# $3: optional sed expression to use
+function add_ldif() {
+    echo "Adding $1..."
+    for n in $2/*.ldif; do
+        if [ -z "$n" ]; then
+            echo "Error, no file to use!"
+            return 1
+        fi
+        if [ -z "$3" ]; then
+            cat "$n" | $LDAPADD
+        else
+            cat "$n" | sed -e "$3" | $LDAPADD
+        fi
+        if [ "$?" -ne "0" ]; then
+            echo "Error using \"$n\", aborting"
+            exit 1
+        fi
+    done
+    return 0
+}
+
+# $1: descriptive text of what is being added
+# $2: directory where the files are
+# $3: optional sed expression to use
+function modify_ldif() {
+    echo "Modifying $1..."
+    for n in $2/*.ldif; do
+        if [ -z "$n" ]; then
+            echo "Error, no file to use!"
+            return 1
+        fi
+        if [ -z "$3" ]; then
+            cat "$n" | $LDAPMODIFY
+        else
+            cat "$n" | sed -e "$3" | $LDAPMODIFY
+        fi
+        if [ "$?" -ne "0" ]; then
+            echo "Error using \"$n\", aborting"
+            return 1
+        fi
+    done
+    return 0
+}
+
+function add_modules() {
+    add_ldif "modules" "$modules_dir"
+    return 0
+}
+
+function add_schemas() {
+    add_ldif "schemas" "$schemas_dir"
+    return 0
+}
+
+function add_db () {
+    add_ldif "database" "$databases_dir" "s/@SUFFIX@/$mysuffix/g"
+    return 0
+}
+
+function modify_acls() {
+    modify_ldif "ACLs" "$acls_dir" "s/@SUFFIX@/$mysuffix/g"
+    return 0
+}
+
+function add_overlays() {
+    add_ldif "overlays" "$overlays_dir" "s/@SUFFIX@/$mysuffix/g"
+    return 0
+}
+
+function populate_db() {
+    add_ldif "populated database" "$contents_dir" "s/@SUFFIX@/$mysuffix/g;s/@DC@/${mydomain%%.[a-zA-Z0-9]*}/g;s/@DOMAIN@/${mydomain}/g"
+    return 0
+}
+
+function set_admin_password() {
+    echo "Setting the admin password..."
+    # XXX - password will show up briefly in the command line and process
+    # list
+    $LDAPPASSWD -s "$pass" "uid=LDAP Admin,ou=System Accounts,$mysuffix"
+    return $?
+}
+
+
+now=`date +%s`
+myfqdn=`hostname -f`
+verbose=
+noprompt=
+if [ -z "$myfqdn" ]; then
+	myfqdn="localhost"
+fi
+distro=`distro_guess`
+${distro}_setup
 
 while [ -n "$1" ]; do
 	case "$1" in
@@ -230,6 +295,18 @@ echo_v
 echo_v "Running in verbose mode"
 echo_v
 
+
+# testing
+echo "Testing administrative access to local ldap server"
+test_auth
+if [ "$?" -eq "0" ]; then
+    echo "Success!"
+else
+    echo "FAILURE!"
+    echo "Command \"$LDAPWHOAMI\" failed"
+    exit 1
+fi
+
 if [ -z "$mydomain" ]; then
 	mydomain=`detect_domain`
 	if [ -z "$noprompt" ]; then
@@ -243,25 +320,9 @@ fi
 mysuffix=`calc_suffix $mydomain`
 
 if [ -z "$mypass" ]; then
-	echo
-	echo "Administrator account"
-	echo
-	echo "The administrator account for this directory is"
-	echo "uid=LDAP Admin,ou=System Accounts,$mysuffix"
-	echo
-	echo "Please choose a password for this account:"
-	while /bin/true; do
-		pass=`$SLAPPASSWD -h {SSHA}`
-		if [ -n "$pass" ]; then
-			break
-		fi
-	done
+    get_admin_password
 else
-	pass=`$SLAPPASSWD -h {SSHA} -s "$mypass"`
-	if [ "$?" -ne "0" ]; then
-		echo "Error at generating password, exiting"
-		exit 1
-	fi
+	pass="$mypass"
 fi
 
 # confirmation
@@ -284,111 +345,38 @@ if [ -z "$noprompt" ]; then
 	fi
 fi
 
-# let's do it
-if [ ! -d "$run_dir" ]; then
-        mkdir -p -m 0755 $run_dir
-        chown $ldap_user:$ldap_group $run_dir
-fi
+# steps:
+# - add modules
+# - add schema
+# - add db + its acls
+# - modify frontend acls
+# - modify config acls
+# - add overlays
+# - populate db
+# - set password for admin
 
-# first, slapd.conf
-myslapdconf=`make_temp`
+add_modules
+check_result $?
 
-echo_v "Creating slapd.conf..."
-cat $slapd_conf_template | sed -e "\
-    s/@SUFFIX@/$mysuffix/g;\
-    s,@SCHEMADIR@,$schema_dir,g;\
-    s,@LDAPCONFDIR@,$ldap_conf_dir,g;\
-    s,@RUNDIR@,$run_dir,g;\
-    s,@LDAPLIBDIR@,$ldap_libdir,g;" > $myslapdconf
-chmod 0640 $myslapdconf
-chgrp $ldap_group $myslapdconf
+add_schemas
+check_result $?
 
-# now, /etc/openldap/ldap.conf
-myldapconf=`make_temp`
-echo_v "Creating $ldap_conf..."
-cat $ldap_conf | \
-	sed -e "s/^BASE[[:blank:]]\+.*/BASE $mysuffix/g;\
-	s/^HOST[[:blank:]]\+.*/HOST $myfqdn/g;\
-	s@^URI[[:blank:]]\+.*@URI ldap://$myfqdn@g" \
-	> $myldapconf
-if ! grep -qE '^(HOST|URI)' $myldapconf; then
-	echo "URI ldap://$myfqdn" >> $myldapconf
-fi
-if ! grep -qE '^BASE' $myldapconf; then
-	echo "BASE $mysuffix" >> $myldapconf
-fi
-chmod 0644 $myldapconf
+add_db
+check_result $?
 
-# ACL file
-echo_v "Creating acl file..."
-cat $acl_template | sed -e "s/@SUFFIX@/$mysuffix/g" > $acl_file
-chmod 0640 $acl_file
-chgrp $ldap_group $acl_file
+modify_acls
+check_result $?
 
-# test
-echo_v "Testing configuration with temporary files..."
-$SLAPTEST -u -f $myslapdconf
-if [ "$?" -ne "0" ]; then
-	echo "ERROR"
-	echo "OpenLDAP configuration file was generated with errors"
-	echo "Aborting. File used was $myslapdconf"
-	rm -f $myldapconf
-	exit 1
-fi
+add_overlays
+check_result $?
 
-# load
-echo_v "Test succeeded, creating LDIF file for database loading..."
-myldif=`make_temp`
-cat $base_ldif_template | sed -e "\
-	s/@SUFFIX@/$mysuffix/g;\
-	s/@DC@/${mydomain%%.[a-zA-Z0-9]*}/g;\
-	s/@DOMAIN@/${mydomain}/g;\
-	s|@ldapadmin_password@|$pass|g" > $myldif
+populate_db
+check_result $?
 
-# dry run first
-echo_v "Attempting to test-load the database..."
-$SLAPADD -u -f $myslapdconf < $myldif
-if [ "$?" -ne "0" ]; then
-	echo "ERROR"
-	echo "Database loading failed during test run."
-	echo "Ldif file used:       $myldif"
-	echo "slapd.conf file used: $myslapdconf"
-	echo
-	echo "Exiting"
-	rm -f $myldapconf
-	exit 1
-fi
+set_admin_password
+check_result $?
 
-# let's go for real now
-echo_v "Everything ok, doing it for real now."
-echo "Stopping ldap service"
-$SERVICE stop > /dev/null 2>&1 || :
-echo_v "Backing up existing files..."
-backup_db=`clean_database $db_dir`
-backup_slapd_conf=`mybackup $slapd_conf`
-backup_ldap_conf=`mybackup $ldap_conf`
-echo_v "Writing $slapd_conf and $ldap_conf..."
-cat $myslapdconf > $slapd_conf; rm -f $myslapdconf
-cat $myldapconf > $ldap_conf; rm -f $myldapconf
-
-echo_v "Loading database..."
-$SLAPADD < $myldif
-if [ "$?" -ne "0" ]; then
-	echo "Something went wrong while initializing the database"
-	echo "Aborting. Your previous database is at $backup_db"
-	echo "Your original slapd.conf and ldap.conf files"
-	echo "were backed up as $backup_slapd_conf and"
-	echo "$backup_ldap_conf, respectively."
-	exit 1
-fi
-
-# forcibly adjust ownership of the DB files, as the Debian/Ubuntu
-# initscript doesn't do it automatically
-chown -R $ldap_user:$ldap_group $db_dir/*
-
-echo "Finished, starting ldap service"
-$SERVICE start
 echo
-echo "Your previous database directory has been backed up as $backup_db"
-echo "All files that were backed up got the suffix \"$now\"."
+echo "Finished, enjoy!"
 echo
+

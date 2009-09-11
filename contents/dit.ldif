@@ -70,16 +70,7 @@ cn: default
 objectClass: pwdPolicy
 objectClass: namedObject
 pwdAttribute: userPassword
-
-dn: ou=KDEConfig,@SUFFIX@
-ou: KDEConfig
-objectClass: organizationalUnit
-description: Container for KDE configuration profiles
-
-dn: ou=default,ou=KDEConfig,@SUFFIX@
-ou: default
-objectClass: organizationalUnit
-description: Default KDE configuration for all users
+pwdCheckQuality: 1
 
 # System Accounts
 dn: uid=Account Admin,ou=System Accounts,@SUFFIX@
@@ -149,7 +140,7 @@ dn: uid=LDAP Admin,ou=System Accounts,@SUFFIX@
 uid: LDAP Admin
 objectClass: account
 objectClass: simpleSecurityObject
-userPassword: @ldapadmin_password@
+userPassword: {CRYPT}x
 description: Account used to administer all parts of the Directory
 
 dn: uid=LDAP Replicator,ou=System Accounts,@SUFFIX@
@@ -166,13 +157,6 @@ objectClass: simpleSecurityObject
 userPassword: {CRYPT}x
 description: Account used to read cn=monitor entries
 
-dn: uid=KDEConfig Admin,ou=System Accounts,@SUFFIX@
-uid: KDEConfig Admin
-objectClass: account
-objectClass: simpleSecurityObject
-userPassword: {CRYPT}x
-description: Account used to administer ou=KDEConfig entries
-
 dn: uid=Idmap Admin,ou=System Accounts,@SUFFIX@
 uid: Idmap Admin
 objectClass: account
@@ -183,93 +167,85 @@ description: Account used to administer Samba Winbind ID mapping related entries
 # Groups associated with system accounts
 dn: cn=LDAP Admins,ou=System Groups,@SUFFIX@
 cn: LDAP Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer all parts of the Directory
 owner: uid=LDAP Admin,ou=System Accounts,@SUFFIX@
 member: uid=LDAP Admin,ou=System Accounts,@SUFFIX@
 
 dn: cn=Account Admins,ou=System Groups,@SUFFIX@
 cn: Account Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer all user, group and machine accounts
 owner: uid=Account Admin,ou=System Accounts,@SUFFIX@
 member: uid=Account Admin,ou=System Accounts,@SUFFIX@
 
 dn: cn=Sudo Admins,ou=System Groups,@SUFFIX@
 cn: Sudo Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer ou=sudoers entries and attributes
 owner: uid=Sudo Admin,ou=System Accounts,@SUFFIX@
 member: uid=Sudo Admin,ou=System Accounts,@SUFFIX@
 
 dn: cn=DNS Admins,ou=System Groups,@SUFFIX@
 cn: DNS Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer ou=DNS entries and attributes
 owner: uid=DNS Admin,ou=System Accounts,@SUFFIX@
 member: uid=DNS Admin,ou=System Accounts,@SUFFIX@
 
 dn: cn=DNS Readers,ou=System Groups,@SUFFIX@
 cn: DNS Readers
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can read entries and attributes under ou=dns
 owner: uid=DNS Admin,ou=System Accounts,@SUFFIX@
 member: uid=DNS Reader,ou=System Accounts,@SUFFIX@
 
 dn: cn=DHCP Admins,ou=System Groups,@SUFFIX@
 cn: DHCP Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer ou=DHCP entries and attributes
 owner: uid=DHCP Admin,ou=System Accounts,@SUFFIX@
 member: uid=DHCP Admin,ou=System Accounts,@SUFFIX@
 
 dn: cn=DHCP Readers,ou=System Groups,@SUFFIX@
 cn: DHCP Readers
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can read entries and attributes under ou=dhcp
 owner: uid=DHCP Admin,ou=System Accounts,@SUFFIX@
 member: uid=DHCP Reader,ou=System Accounts,@SUFFIX@
 
 dn: cn=Address Book Admins,ou=System Groups,@SUFFIX@
 cn: Address Book Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer ou=Address Book entries and attributes
 owner: uid=Address Book Admin,ou=System Accounts,@SUFFIX@
 member: uid=Address Book Admin,ou=System Accounts,@SUFFIX@
 
 dn: cn=LDAP Replicators,ou=System Groups,@SUFFIX@
 cn: LDAP Replicators
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can be used for syncrepl replication
 owner: uid=LDAP Replicator,ou=System Accounts,@SUFFIX@
 member: uid=LDAP Replicator,ou=System Accounts,@SUFFIX@
 
 dn: cn=MTA Admins,ou=System Groups,@SUFFIX@
 cn: MTA Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer email related attributes
 owner: uid=MTA Admin,ou=System Accounts,@SUFFIX@
 member: uid=MTA Admin,ou=System Accounts,@SUFFIX@
 
 dn: cn=LDAP Monitors,ou=System Groups,@SUFFIX@
 cn: LDAP Monitors
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can read the cn=monitor backend
 owner: uid=LDAP Monitor,ou=System Accounts,@SUFFIX@
 member: uid=LDAP Monitor,ou=System Accounts,@SUFFIX@
 
 dn: cn=Idmap Admins,ou=System Groups,@SUFFIX@
 cn: Idmap Admins
-objectClass: groupOfNames
+objectClass: groupOfMembers
 description: Members can administer ou=Idmap entries and attributes
 owner: uid=Idmap Admin,ou=System Accounts,@SUFFIX@
 member: uid=Idmap Admin,ou=System Accounts,@SUFFIX@
-
-dn: cn=KDEConfig Admins,ou=System Groups,@SUFFIX@
-cn: KDEConfig Admins
-objectClass: groupOfNames
-description: Members can administer ou=KDEConfig entries and attributes
-owner: uid=KDEConfig Admin,ou=System Accounts,@SUFFIX@
-member: uid=KDEConfig Admin,ou=System Accounts,@SUFFIX@
-member: uid=Account Admin,ou=System Accounts,@SUFFIX@
 

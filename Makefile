@@ -1,7 +1,7 @@
 # Makefile for openldap-dit
 
 NAME = openldap-dit
-VERSION = 0.19
+VERSION = 0.20
 DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
@@ -11,34 +11,27 @@ sysconfdir = /etc
 docdir = $(datadir)/doc/$(NAME)
 
 ldapdatadir = $(datadir)/slapd
-ldapconfdir = $(sysconfdir)/ldap
-ldapschemadir = $(ldapconfdir)/schema
+mydir = $(ldapdatadir)/$(NAME)
 ldapscriptdir = $(ldapdatadir)
 
 install:
-	@echo "Please select among the available targets:"
-	@echo "install-ubuntu: for Ubuntu and Debian"
-	@echo "install-mandriva: for Mandriva"
-	@echo "install-generic: supply your own makefile variables"
-	@exit 0
-
-install-generic install-ubuntu:
-	mkdir -p $(DESTDIR)$(ldapschemadir)
-	mkdir -p $(DESTDIR)$(ldapdatadir)/$(NAME)
+	mkdir -p $(DESTDIR)$(mydir)
 	mkdir -p $(DESTDIR)$(docdir)
 	mkdir -p $(DESTDIR)$(ldapscriptdir)
+	mkdir -p $(DESTDIR)$(mydir)/acls
+	mkdir -p $(DESTDIR)$(mydir)/databases
+	mkdir -p $(DESTDIR)$(mydir)/overlays
+	mkdir -p $(DESTDIR)$(mydir)/schemas
+	mkdir -p $(DESTDIR)$(mydir)/modules
+	mkdir -p $(DESTDIR)$(mydir)/contents
 	install -m 0755 *.sh $(DESTDIR)$(ldapscriptdir)
-	install -m 0644 *.schema $(DESTDIR)$(ldapschemadir)
-	install -m 0644 README* TODO LICENSE COPYRIGHT $(DESTDIR)$(docdir)
-	install -m 0644 *.ldif *.conf $(DESTDIR)$(ldapdatadir)/$(NAME)
-
-install-mandriva:
-	@make \
-		ldapdatadir=$(datadir)/openldap \
-		ldapconfdir=$(sysconfdir)/openldap \
-		ldapschemadir=$(datadir)/openldap/schema \
-		ldapscriptdir=$(datadir)/openldap/scripts \
-		install-generic
+	install -m 0644 schemas/* $(DESTDIR)$(mydir)/schemas
+	install -m 0644 doc/* TODO LICENSE COPYRIGHT $(DESTDIR)$(docdir)
+	install -m 0644 acls/* $(DESTDIR)$(mydir)/acls/
+	install -m 0644 databases/* $(DESTDIR)$(mydir)/databases/
+	install -m 0644 overlays/* $(DESTDIR)$(mydir)/overlays/
+	install -m 0644 modules/* $(DESTDIR)$(mydir)/modules/
+	install -m 0644 contents/* $(DESTDIR)$(mydir)/contents/
 
 clean:
 	rm -rf *~ $(NAME)-$(VERSION) $(NAME)-$(VERSION).tar.bz2 debian/$(NAME)
@@ -50,8 +43,8 @@ clean:
 
 tarball: clean
 	mkdir $(NAME)-$(VERSION)
-	cp Makefile *.spec *.sh *.conf *.schema README* TODO LICENSE COPYRIGHT *.ldif $(NAME)-$(VERSION)
+	cp -a Makefile *.sh schemas doc TODO LICENSE COPYRIGHT acls databases overlays modules contents $(NAME)-$(VERSION)
 	cp -a debian $(NAME)-$(VERSION)
-	tar cjf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
+	tar czf $(NAME)-$(VERSION).tar.gz $(NAME)-$(VERSION)
 	rm -rf $(NAME)-$(VERSION)
 
