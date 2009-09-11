@@ -41,7 +41,7 @@ clean:
 
 tarball: clean
 	mkdir $(NAME)-$(VERSION)
-	cp -a Makefile *.sh schemas doc TODO LICENSE COPYRIGHT acls databases overlays $(NAME)-$(VERSION)
+	cp -a Makefile *.sh schemas doc TODO LICENSE COPYRIGHT acls databases overlays modules $(NAME)-$(VERSION)
 	cp -a debian $(NAME)-$(VERSION)
 	tar cjf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
 	rm -rf $(NAME)-$(VERSION)
