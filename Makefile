@@ -22,12 +22,14 @@ install:
 	mkdir -p $(DESTDIR)$(mydir)/databases
 	mkdir -p $(DESTDIR)$(mydir)/overlays
 	mkdir -p $(DESTDIR)$(mydir)/schemas
+	mkdir -p $(DESTDIR)$(mydir)/modules
 	install -m 0755 *.sh $(DESTDIR)$(ldapscriptdir)
 	install -m 0644 schemas/* $(DESTDIR)$(mydir)/schemas
 	install -m 0644 doc/* TODO LICENSE COPYRIGHT $(DESTDIR)$(docdir)
 	install -m 0644 acls/* $(DESTDIR)$(mydir)/acls/
 	install -m 0644 databases/* $(DESTDIR)$(mydir)/databases/
 	install -m 0644 overlays/* $(DESTDIR)$(mydir)/overlays/
+	install -m 0644 modules/* $(DESTDIR)$(mydir)/modules/
 
 clean:
 	rm -rf *~ $(NAME)-$(VERSION) $(NAME)-$(VERSION).tar.bz2 debian/$(NAME)
