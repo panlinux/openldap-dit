@@ -5,7 +5,7 @@ Here we will show some basic examples.
 
 Importing data
 --------------
-The sudo rpm package contains a script called sudoers2ldif that can be used to
+The sudo package contains a script called sudoers2ldif that can be used to
 convert an existing /etc/sudoers file to an ldif one which can be imported into
 LDAP. Alternatively, since the sudo schema is reasonable simple, it can be
 populated by hand.
@@ -78,23 +78,18 @@ Configuring sudo
 Now we have just to configure sudo to actually use our LDAP server for its
 configuration (or just part of the configuration).
 
-As of this writing, the sudo package by default uses /etc/ldap.conf for the
-ldap configuration. This file is shared with pam_ldap and nss_ldap, and there
-are pros and cons for this sharing. See the URL below for an unfinished thread
-about this:
-
-http://archives.mandrivalinux.com/cooker/2006-05/msg00527.php
-
-The most important setting in this file is sudoers_base, which we must point to
+The sudo package uses /etc/ldap.conf for the ldap configuration. The most
+important setting in this file is sudoers_base, which we must point to
 ou=sudoers,dc=example,dc=com in our case. By default, anonymous searches of
 ou=sudoers are allowed, so we don't have to worry about authentication
 credentials now.
 
-Finally, if you want sudo to completely ignore the contents of /etc/sudoers,
-then add the attribute below to the cn=defaults entry:
+Another file that needs to be configured is /etc/nsswitch.conf. Just add a
+"sudoers:" entry to it which looks like this:
 
-sudoOption: ignore_local_sudoers
+sudoers: files ldap
 
+That will make sudo first look at the /etc/sudoers file, and then at ldap.
 
 Delegating
 ----------
@@ -122,9 +117,5 @@ be wanted.
 
 To avoid this, the ACLs could be changed to disallow anonymous access to this
 branch, but each machine with sudo would need to have the sudo ldap
-configuration file changed to have a binddn and a password. And, since this
-configuration file and its options are also shared among pam_ldap and nss_ldap,
-this means that nss_ldap would also start to use authenticated binds. See
-http://archives.mandrivalinux.com/cooker/2006-05/msg00527.php for a small
-discussion about the pros and cons.
+configuration file changed to have a binddn and a password.
 
