@@ -166,6 +166,10 @@ function check_result() {
 function add_ldif() {
     echo "Adding $1..."
     for n in $2/*.ldif; do
+        if [ -z "$n" ]; then
+            echo "Error, no file to use!"
+            return 1
+        fi
         if [ -z "$3" ]; then
             cat "$n" | $LDAPADD
         else
