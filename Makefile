@@ -11,18 +11,23 @@ sysconfdir = /etc
 docdir = $(datadir)/doc/$(NAME)
 
 ldapdatadir = $(datadir)/slapd
-ldapconfdir = $(sysconfdir)/ldap
-ldapschemadir = $(ldapdatadir)/$(NAME)
+mydir = $(ldapdatadir)/$(NAME)
 ldapscriptdir = $(ldapdatadir)
 
 install:
-	mkdir -p $(DESTDIR)$(ldapschemadir)
-	mkdir -p $(DESTDIR)$(ldapdatadir)/$(NAME)
+	mkdir -p $(DESTDIR)$(mydir)
 	mkdir -p $(DESTDIR)$(docdir)
 	mkdir -p $(DESTDIR)$(ldapscriptdir)
+	mkdir -p $(DESTDIR)$(mydir)/acls
+	mkdir -p $(DESTDIR)$(mydir)/databases
+	mkdir -p $(DESTDIR)$(mydir)/overlays
+	mkdir -p $(DESTDIR)$(mydir)/schemas
 	install -m 0755 *.sh $(DESTDIR)$(ldapscriptdir)
-	install -m 0644 schemas/*.ldif $(DESTDIR)$(ldapschemadir)
+	install -m 0644 schemas/* $(DESTDIR)$(mydir)/schemas
 	install -m 0644 doc/* TODO LICENSE COPYRIGHT $(DESTDIR)$(docdir)
+	install -m 0644 acls/* $(DESTDIR)$(mydir)/acls/
+	install -m 0644 databases/* $(DESTDIR)$(mydir)/databases/
+	install -m 0644 overlays/* $(DESTDIR)$(mydir)/overlays/
 
 clean:
 	rm -rf *~ $(NAME)-$(VERSION) $(NAME)-$(VERSION).tar.bz2 debian/$(NAME)
