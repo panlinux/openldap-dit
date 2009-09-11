@@ -21,6 +21,10 @@
 # This file was automatically generated from nis.schema; see that file
 # for complete references.
 #
+#
+# modified posixGroup to be auxiliary
+# andreas@canonical.com
+
 dn: cn=rfc2307bis,cn=schema,cn=config
 objectClass: olcSchemaConfig
 cn: rfc2307bis
