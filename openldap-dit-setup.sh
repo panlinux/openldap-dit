@@ -241,7 +241,7 @@ function set_admin_password() {
     echo "Setting the admin password..."
     # XXX - password will show up briefly in the command line and process
     # list
-    $LDAPPASSWD -s "$pass"
+    $LDAPPASSWD -s "$pass" "uid=LDAP Admin,ou=System Accounts,$mysuffix"
     return $?
 }
 
