@@ -185,6 +185,10 @@ function add_ldif() {
 function modify_ldif() {
     echo "Modifying $1..."
     for n in $2/*.ldif; do
+        if [ -z "$n" ]; then
+            echo "Error, no file to use!"
+            return 1
+        fi
         if [ -z "$3" ]; then
             cat "$n" | $LDAPMODIFY
         else
@@ -192,7 +196,7 @@ function modify_ldif() {
         fi
         if [ "$?" -ne "0" ]; then
             echo "Error using \"$n\", aborting"
-            exit 1
+            return 1
         fi
     done
     return 0
