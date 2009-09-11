@@ -158,16 +158,6 @@ function check_result() {
     fi
 }
 
-# $1: exit status
-# $2: file used
-function abort_if_fail() {
-    if [ "$1" -ne "0" ]; then
-        echo "Error using \"$2\", aborting"
-        exit 1
-    fi
-    return 0
-}
-
 # $1: descriptive text of what is being added
 # $2: directory where the files are
 # $3: optional sed expression to use
