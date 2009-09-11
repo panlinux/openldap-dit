@@ -228,7 +228,7 @@ function modify_config_acls() {
 }
 
 function add_overlays() {
-    add_ldif "overlays" "$overlays_dir"
+    add_ldif "overlays" "$overlays_dir" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 

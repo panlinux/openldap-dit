@@ -4,8 +4,8 @@ objectClass: olcOverlayConfig
 objectClass: olcConfig
 objectClass: top
 olcOverlay: unique
-olcUniqueURI: ldap:///ou=People,dc=example,dc=com?uidNumber
+olcUniqueURI: ldap:///ou=People,@SUFFIX@?uidNumber
  ?one?(objectClass=posixAccount)
-olcUniqueURI: ldap:///ou=Group,dc=example,dc=com?gidNumber?one?(objectClass=po
+olcUniqueURI: ldap:///ou=Group,@SUFFIX@?gidNumber?one?(objectClass=po
  sixGroup)
 
