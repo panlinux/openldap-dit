@@ -14,7 +14,7 @@
 ## <http://www.OpenLDAP.org/license.html>.
 #
 # Definitions from RFC2307 (Experimental)
-#	An Approach for Using LDAP as a Network Information Service
+#  An Approach for Using LDAP as a Network Information Service
 #
 # Depends upon core.ldif and cosine.ldif
 #
@@ -24,6 +24,9 @@
 #
 # modified posixGroup to be auxiliary
 # andreas@canonical.com
+
+# adapted from http://tools.ietf.org/draft/draft-howard-rfc2307bis/draft-howard-rfc2307bis-02.txt
+# some changes are not here. For example, the ordering rules for uidNumber and the like
 
 dn: cn=rfc2307bis,cn=schema,cn=config
 objectClass: olcSchemaConfig
@@ -92,9 +95,9 @@ olcObjectClasses: ( 1.3.6.1.1.1.2.1 NAME 'shadowAccount' DESC 'Additional a
  ttributes for shadow passwords' SUP top AUXILIARY MUST uid MAY ( userPassword
   $ shadowLastChange $ shadowMin $ shadowMax $ shadowWarning $ shadowInactive 
  $ shadowExpire $ shadowFlag $ description ) )
-olcObjectClasses: ( 1.3.6.1.1.1.2.2 NAME 'posixGroup' DESC 'Abstraction of 
- a group of accounts' SUP top AUXILIARY MUST ( cn $ gidNumber ) MAY ( userPas
- sword $ memberUid $ description ) )
+olcObjectClasses: ( 1.3.6.1.1.1.2.2 NAME 'posixGroup' SUP top AUXILIARY DESC 
+ 'Abstraction of a group of accounts' MUST ( cn $ gidNumber ) MAY ( 
+ authPassword $ userPassword $ memberUid $ description ) )
 olcObjectClasses: ( 1.3.6.1.1.1.2.3 NAME 'ipService' DESC 'Abstraction an I
  nternet Protocol service' SUP top STRUCTURAL MUST ( cn $ ipServicePort $ ipSe
  rviceProtocol ) MAY description )
@@ -122,3 +125,7 @@ olcObjectClasses: ( 1.3.6.1.1.1.2.11 NAME 'ieee802Device' DESC 'A device w
  ith a MAC address' SUP top AUXILIARY MAY macAddress )
 olcObjectClasses: ( 1.3.6.1.1.1.2.12 NAME 'bootableDevice' DESC 'A device 
  with boot parameters' SUP top AUXILIARY MAY ( bootFile $ bootParameter ) )
+olcObjectClasses: ( 1.3.6.1.1.1.2.18 NAME 'groupOfMembers' SUP top STRUCTURAL
+ DESC 'A group with members (DNs)' MUST cn MAY ( businessCategory $ 
+ seeAlso $ owner $ ou $ o $ description $ member ) )
+
