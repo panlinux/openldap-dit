@@ -221,13 +221,8 @@ function add_db () {
     return 0
 }
 
-function modify_frontend_acls() {
-    modify_ldif "Frontend ACLs" "s/@SUFFIX@/$mysuffix/g"
-    return 0
-}
-
-function modify_config_acls() {
-    modify_ldif "Config ACLs" "s/@SUFFIX@/$mysuffix/g"
+function modify_acls() {
+    modify_ldif "Fixing ACLs" "$acls_dir""s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
@@ -368,10 +363,7 @@ check_result $?
 add_db
 check_result $?
 
-modify_frontend_acls
-check_result $?
-
-modify_config_acls
+modify_acls
 check_result $?
 
 add_overlays
