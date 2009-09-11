@@ -1,4 +1,4 @@
 dn: olcDatabase={0}config,cn=config
 changetype: modify
 add: olcAccess
-olcAccess: to * by group.exact="cn=LDAP Admins,ou=System Groups,dc=example,dc=com" manage by * break
+olcAccess: to * by group.exact="cn=LDAP Admins,ou=System Groups,@SUFFIX@" manage by * break

@@ -1,3 +1,4 @@
+# see bug #427842
 dn: olcDatabase={-1}frontend,cn=config
 changetype: modify
 add: olcAccess
