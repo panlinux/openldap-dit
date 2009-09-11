@@ -5,6 +5,10 @@ if [ "`id -u`" != "0" ]; then
 	exit 1
 fi
 
+LDAPWHOAMI="ldapwhoami -H ldapi:///"
+LDAPADD="ldapadd -H ldapi:///"
+LDAPMODIFY="ldapmodify -H ldapi:///"
+
 function distro_guess()
 {
 #$ cat /etc/lsb-release 
@@ -30,7 +34,6 @@ function distro_guess()
 
 function ubuntu_setup()
 {
-    export SLAPTEST="/usr/sbin/slaptest"
     export SLAPADD="/usr/sbin/slapadd"
     export SLAPPASSWD="/usr/sbin/slappasswd"
     if [ -x /usr/sbin/invoke-rc.d ]; then
@@ -63,16 +66,6 @@ function ubuntu_setup()
 
     return 0
 }
-
-now=`date +%s`
-myfqdn=`hostname -f`
-verbose=
-noprompt=
-if [ -z "$myfqdn" ]; then
-	myfqdn="localhost"
-fi
-distro=`distro_guess`
-${distro}_setup
 
 function usage() {
 	echo "Usage:"
@@ -161,6 +154,16 @@ function mybackup() {
 	echo "$newname"
 	return 0
 }
+
+now=`date +%s`
+myfqdn=`hostname -f`
+verbose=
+noprompt=
+if [ -z "$myfqdn" ]; then
+	myfqdn="localhost"
+fi
+distro=`distro_guess`
+${distro}_setup
 
 while [ -n "$1" ]; do
 	case "$1" in
@@ -295,17 +298,6 @@ echo_v "Creating acl file..."
 cat $acl_template | sed -e "s/@SUFFIX@/$mysuffix/g" > $acl_file
 chmod 0640 $acl_file
 chgrp $ldap_group $acl_file
-
-# test
-echo_v "Testing configuration with temporary files..."
-$SLAPTEST -u -f $myslapdconf
-if [ "$?" -ne "0" ]; then
-	echo "ERROR"
-	echo "OpenLDAP configuration file was generated with errors"
-	echo "Aborting. File used was $myslapdconf"
-	rm -f $myldapconf
-	exit 1
-fi
 
 # load
 echo_v "Test succeeded, creating LDIF file for database loading..."
