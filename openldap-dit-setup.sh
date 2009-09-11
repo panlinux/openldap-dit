@@ -122,19 +122,21 @@ function get_admin_password() {
 	echo
 	echo "Please choose a password for this account:"
 	while /bin/true; do
-        echo "New password: "
+        echo -n "New password: "
         stty -echo
         read pass1
         stty echo
+        echo
         if [ -z "$pass1" ]; then
             echo "Error, password cannot be empty"
             echo
             continue
         fi
-        echo "Repeat new password: "
+        echo -n "Repeat new password: "
         stty -echo
         read pass2
         stty echo
+        echo
         if [ "$pass1" != "$pass2" ]; then
             echo "Error, passwords don't match"
             echo
