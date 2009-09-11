@@ -28,35 +28,6 @@ function distro_guess()
     return 0
 }
 
-function mandriva_setup()
-{
-    export SLAPTEST="/usr/sbin/slaptest"
-    export SLAPADD="/usr/sbin/slapadd"
-    export SLAPPASSWD="/usr/sbin/slappasswd"
-    export SERVICE="/sbin/service ldap"
-    export slapd_conf_template="/usr/share/openldap/openldap-dit/openldap-dit-slapd-template.conf"
-    export ldap_conf_dir="/etc/openldap"
-    export slapd_conf="$ldap_conf_dir/slapd.conf"
-    export schema_dir="/usr/share/openldap/schema"
-    export ldap_libdir="/usr/lib/openldap"
-    export ldap_conf="$ldap_conf_dir/ldap.conf"
-    export base_ldif_template="/usr/share/openldap/openldap-dit/openldap-dit-base-template.ldif"
-    export acl_template="/usr/share/openldap/openldap-dit/openldap-dit-access-template.conf"
-    export acl_file="$ldap_conf_dir/openldap-dit-access.conf"
-    export run_dir="/var/run/ldap"
-    export db_dir="/var/lib/ldap"
-    export ldap_user="ldap"
-    export ldap_group="ldap"
-
-    for package in openldap-server openldap-client; do
-        if ! rpm -q $package 2>/dev/null; then
-            echo "Error, please install package $package"
-        fi
-    done
-
-    return 0
-}
-
 function ubuntu_setup()
 {
     export SLAPTEST="/usr/sbin/slaptest"
