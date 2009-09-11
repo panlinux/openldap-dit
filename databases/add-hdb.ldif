@@ -37,7 +37,7 @@ olcDbIndex: dhcpHWAddress eq
 olcDbIndex: sudoUser eq,sub
 olcAccess: {0}to dn.subtree="@SUFFIX@"  by group/groupOfMembers/member.
  exact="cn=ldap admins,ou=system groups,@SUFFIX@" write  by group/gro
- upOfNames/member.exact="cn=ldap replicators,ou=system groups,@SUFFIX@m"
+ upOfMembers/member.exact="cn=ldap replicators,ou=system groups,@SUFFIX@m"
  read  by * +0 break
 olcAccess: {1}to dn.subtree="ou=people,@SUFFIX@"  attrs=shadowLastCha
  nge  by self write  by group/groupOfMembers/member.exact="cn=account admins,ou=
@@ -60,7 +60,7 @@ olcAccess: {7}to dn.subtree="@SUFFIX@"  attrs=sambaPasswordHistory,pw
  dHistory  by self read  by group/groupOfMembers/member.exact="cn=account admins
  ,ou=system groups,@SUFFIX@" write  by * none
 olcAccess: {8}to dn.subtree="@SUFFIX@"  attrs=pwdReset  by group/grou
- pOfNames/member.exact="cn=account admins,ou=system groups,@SUFFIX@" 
+ pOfMembers/member.exact="cn=account admins,ou=system groups,@SUFFIX@" 
  write  by * read
 olcAccess: {9}to dn.regex="^cn=[^,]+,ou=(System Groups|Group),@SUFFIX@$"  
  attrs=member  by dnattr=owner write  by * +0 break
@@ -79,8 +79,8 @@ olcAccess: {13}to dn.regex="^(sambaDomainName=[^,]+,)?@SUFFIX@$"  att
  d
 olcAccess: {14}to dn.regex="^(sambaSID=[^,]+,)?ou=Idmap,@SUFFIX@$"  a
  ttrs=children,entry,@sambaIdmapEntry  by group/groupOfMembers/member.exact="cn=
- account admins,ou=system groups,@SUFFIX@" write  by group/groupOfNam
- es/member.exact="cn=idmap admins,ou=system groups,@SUFFIX@" write  b
+ account admins,ou=system groups,@SUFFIX@" write  by group/gropuOfMembers
+ /member.exact="cn=idmap admins,ou=system groups,@SUFFIX@" write  b
  y * read
 olcAccess: {15}to dn.regex="^(.*,)?ou=Address Book,@SUFFIX@"  attrs=c
  hildren,entry,@inetOrgPerson  by group/groupOfMembers/member.exact="cn=address 
