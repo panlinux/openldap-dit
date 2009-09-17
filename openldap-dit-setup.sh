@@ -377,6 +377,11 @@ set_admin_password
 check_result $?
 
 echo
-echo "Finished, enjoy!"
+echo "Finished, doing one last restart..."
+/etc/init.d/slapd restart
+check_result $?
+
+echo
+echo "Done, enjoy!"
 echo
 
