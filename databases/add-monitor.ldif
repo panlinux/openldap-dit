@@ -3,7 +3,6 @@ objectClass: olcMonitorConfig
 objectClass: olcDatabaseConfig
 objectClass: olcConfig
 olcDatabase: monitor
-olcAccess: {0}to dn.subtree="cn=Monitor" by group/groupOfMembers/me
- mber.exact="cn=LDAP Admins,ou=System Groups,@SUFFIX@" read by grou
- p/groupOfMembers/member.exact="cn=LDAP Monitors,ou=System Groups,
- @SUFFIX@" read by * none
+olcAccess: {0}to dn.subtree="cn=Monitor" by group/groupOfMembers/member.exact="cn=LDAP Admins,ou=System Groups,@SUFFIX@" read 
+  by group/groupOfMembers/member.exact="cn=LDAP Monitors,ou=System Groups,@SUFFIX@" read
+  by * none
