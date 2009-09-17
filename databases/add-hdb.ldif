@@ -36,7 +36,7 @@ olcDbIndex: relativeDomainName eq
 olcDbIndex: dhcpHWAddress eq
 olcDbIndex: sudoUser eq,sub
 olcAccess: {0}to dn.subtree="@SUFFIX@" 
-  by group/groupOfMembers/member.exact="cn=ldap admins,ou=system groups,@SUFFIX@" write
+  by group/groupOfMembers/member.exact="cn=ldap admins,ou=system groups,@SUFFIX@" manage
   by group/groupOfMembers/member.exact="cn=ldap replicators,ou=system groups,@SUFFIX@" read
   by * break
 olcAccess: {1}to dn.subtree="ou=people,@SUFFIX@"
