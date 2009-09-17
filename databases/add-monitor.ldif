@@ -1,0 +1,9 @@
+dn: olcDatabase=monitor,cn=config
+objectClass: olcMonitorConfig
+objectClass: olcDatabaseConfig
+objectClass: olcConfig
+olcDatabase: monitor
+olcAccess: {0}to dn.base="cn=Monitor" by group/groupOfMembers/member.exact="
+ cn=LDAP Admins,ou=System Groups,@SUFFIX@" read by group/groupOfMem
+ bers/member.exact="cn=LDAP Monitors,ou=System Groups,@SUFFIX@" rea
+ d by * none
