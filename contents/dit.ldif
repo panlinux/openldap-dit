@@ -60,6 +60,11 @@ ou: dns
 objectClass: organizationalUnit
 description: Container for DNS related entries
 
+dn: ou=Kerberos Realms,@SUFFIX@
+ou: Kerberos Realms
+objectClass: organizationalUnit
+description: Container for Kerberos Realms
+
 dn: ou=Password Policies,@SUFFIX@
 ou: Password Policies
 objectClass: organizationalUnit
@@ -163,6 +168,20 @@ objectClass: account
 objectClass: simpleSecurityObject
 userPassword: {CRYPT}x
 description: Account used to administer Samba Winbind ID mapping related entries and attributes
+
+dn: uid=kdc-service,ou=System Accounts,@SUFFIX@
+uid: kdc-service
+objectClass: account
+objectClass: simpleSecurityObject
+userPassword: {CRYPT}x
+description: Account used for the Kerberos KDC
+
+dn: uid=kadmin-service,ou=System Accounts,@SUFFIX@
+uid: kadmin-service
+objectClass: account
+objectClass: simpleSecurityObject
+userPassword: {CRYPT}x
+description: Account used for the Kerberos Admin server
 
 # Groups associated with system accounts
 dn: cn=LDAP Admins,ou=System Groups,@SUFFIX@
