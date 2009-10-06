@@ -27,7 +27,7 @@ olcDbIndex: sambaDomainName eq
 olcDbIndex: sambaSID eq,sub
 olcDbIndex: displayName eq
 olcDbIndex: sambaGroupType eq
-olcDbIndex: krb5PrincipalName eq
+olcDbIndex: krbPrincipalName eq
 olcDbIndex: sambaSIDList eq
 olcDbIndex: uniqueMember pres,eq
 olcDbIndex: zoneName eq
@@ -56,9 +56,11 @@ olcAccess: {3}to dn.subtree="@SUFFIX@"
   by anonymous auth
   by * none
 olcAccess: {4}to dn.subtree="@SUFFIX@"
-  attrs=krb5Key
+  attrs=krbPrincipalKey
   by self write
   by group/groupOfMembers/member.exact="cn=account admins,ou=system groups,@SUFFIX@" write
+  by dn.exact="uid=kdc-service,ou=System Accounts,@SUFFIX@" read
+  by dn.exact="uid=kadmin-service,ou=System Accounts,@SUFFIX@" write
   by anonymous auth
   by * none
 olcAccess: {5}to dn.subtree="ou=password policies,@SUFFIX@"
@@ -126,11 +128,15 @@ olcAccess: {19}to dn.subtree="ou=dns,@SUFFIX@"
   by group/groupOfMembers/member.exact="cn=dns admins,ou=system groups,@SUFFIX@" write
   by group/groupOfMembers/member.exact="cn=dns readers,ou=system groups,@SUFFIX@" read
   by * none
-olcAccess: {20}to dn.one="ou=people,@SUFFIX@"
+olcAccess: {20}to dn.subtree="ou=Kerberos Realms,@SUFFIX@"
+  by dn.exact="uid=kdc-service,ou=System Accounts,@SUFFIX@" read
+  by dn.exact="uid=kadmin-service,ou=System Accounts,@SUFFIX@" write
+  by * none
+olcAccess: {21}to dn.one="ou=people,@SUFFIX@"
   attrs=@inetLocalMailRecipient,mail
   by group/groupOfMembers/member.exact="cn=mta admins,ou=system groups,@SUFFIX@" write
   by * read
-olcAccess: {21}to dn.subtree="@SUFFIX@"
+olcAccess: {22}to dn.subtree="@SUFFIX@"
   by * read
 olcAddContentAcl: TRUE
 olcLastMod: TRUE
