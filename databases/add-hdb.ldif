@@ -56,9 +56,11 @@ olcAccess: {3}to dn.subtree="@SUFFIX@"
   by anonymous auth
   by * none
 olcAccess: {4}to dn.subtree="@SUFFIX@"
-  attrs=krbKey
+  attrs=krbPrincipalKey
   by self write
   by group/groupOfMembers/member.exact="cn=account admins,ou=system groups,@SUFFIX@" write
+  by dn.exact="uid=kdc-service,ou=System Accounts,@SUFFIX@" read
+  by dn.exact="uid=kadmin-service,ou=System Accounts,@SUFFIX@" write
   by anonymous auth
   by * none
 olcAccess: {5}to dn.subtree="ou=password policies,@SUFFIX@"
