@@ -28,6 +28,7 @@ olcDbIndex: sambaSID eq,sub
 olcDbIndex: displayName eq
 olcDbIndex: sambaGroupType eq
 olcDbIndex: krbPrincipalName eq
+olcDbIndex: krbPwdPolicyReference eq
 olcDbIndex: sambaSIDList eq
 olcDbIndex: uniqueMember pres,eq
 olcDbIndex: zoneName eq
