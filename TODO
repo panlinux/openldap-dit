@@ -1,8 +1,5 @@
 - better MTA Admins definitions/roles
 - have a good MTA schema (virtual domains ready perhaps?) and ACLs for it
-- we have "Domain Admins", with posixGroup and sambaGroupMapping, and "Samba
-  Admins", our special group to administer Samba attributes. This can be
-  confusing as the names have similar meaning.
 - sort out the read-only accounts: use a generic one instead of creating one
   for each service (like nssldap today). Or not. There are other services which
   need read access, like for example Postfix when using LDAP maps.
@@ -32,6 +29,4 @@
   away with creating another branch for these service principals?
 - benchmark to see the impact of all these ACLs!
 - add support for autofs maps in LDAP
-- don't overwrite files during installation, or make backups before overwriting
-  them
 
