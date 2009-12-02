@@ -1,7 +1,7 @@
 # Makefile for openldap-dit
 
 NAME = openldap-dit
-VERSION = 0.20
+VERSION = 0.21
 DESTDIR =
 prefix = /usr
 bindir = $(prefix)/bin
