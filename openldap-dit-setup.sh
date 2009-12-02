@@ -384,4 +384,11 @@ check_result $?
 echo
 echo "Done, enjoy!"
 echo
+echo "Remember: this is your administrator bind dn:"
+echo "uid=LDAP Admin,ou=System Accounts,$mysuffix"
+echo
+echo "You can use it in double quotes in the command line, like:"
+echo "ldapwhoami -x -D \"uid=LDAP Admin,ou=System Accounts,$mysuffix\" -W "
+echo
+
 
