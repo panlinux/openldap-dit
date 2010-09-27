@@ -44,7 +44,7 @@ install: build
 	dh_installdirs
 
 	# Add here commands to install the package into debian/openldap-dit.
-	$(MAKE) DESTDIR=$(CURDIR)/debian/openldap-dit install-ubuntu
+	$(MAKE) DESTDIR=$(CURDIR)/debian/openldap-dit install
 
 
 # Build architecture-independent files here.
