@@ -10,27 +10,6 @@ LDAPADD="ldapadd -H ldapi:/// -Y EXTERNAL -Q"
 LDAPMODIFY="ldapmodify -H ldapi:/// -Y EXTERNAL -Q"
 LDAPPASSWD="ldappasswd -H ldapi:/// -Y EXTERNAL -Q"
 
-distro_guess() {
-#$ cat /etc/lsb-release 
-#DISTRIB_ID=Ubuntu
-#DISTRIB_RELEASE=8.04
-#DISTRIB_CODENAME=hardy
-#DISTRIB_DESCRIPTION="Ubuntu 8.04"
-    if [ -r "/etc/lsb-release" ]; then
-        source /etc/lsb-release
-    else
-        echo "Can't guess distro name (no /etc/lsb-release or it's not readable)"
-        exit 1
-    fi
-    if [ -z "$DISTRIB_ID" -o -z "$DISTRIB_RELEASE" ]; then
-        echo "No DISTRIB_ID or DISTRIB_RELEASE variable(s) in /etc/lsb-release"
-        exit 1
-    fi
-    DISTRIB_ID=`echo $DISTRIB_ID | tr A-Z a-z`
-    export DISTRIB_ID DISTRIB_RELEASE
-    echo $DISTRIB_ID
-    return 0
-}
 
 ubuntu_setup() {
     if [ -x /usr/sbin/invoke-rc.d ]; then
@@ -251,8 +230,7 @@ noprompt=
 if [ -z "$myfqdn" ]; then
 	myfqdn="localhost"
 fi
-distro=`distro_guess`
-${distro}_setup
+ubuntu_setup
 
 while [ -n "$1" ]; do
 	case "$1" in
