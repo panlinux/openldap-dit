@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ "`id -u`" != "0" ]; then
-	echo "Error, must be root user"
-	exit 1
+    echo "Error, must be root user"
+    exit 1
 fi
 
 LDAPWHOAMI="ldapwhoami -H ldapi:/// -Y EXTERNAL -Q"
@@ -31,45 +31,45 @@ ubuntu_setup() {
 }
 
 usage() {
-	echo "Usage:"
-	echo "$0 [-h | --help] [-v] [-d <dnsdomain>] [-p <password>] [-y]"
-	echo
-	echo "-h | --help    : shows this help"
-	echo "-v             : verbose mode"
-	echo "-d <dnsdomain> : use <dnsdomain> for dns domain"
-	echo "-p <password>  : use <password> for LDAP Admin password"
-	echo 
-	echo "-y             : assume default answer in all prompts "
-	echo "                 except the password one"
+    echo "Usage:"
+    echo "$0 [-h | --help] [-v] [-d <dnsdomain>] [-p <password>] [-y]"
+    echo
+    echo "-h | --help    : shows this help"
+    echo "-v             : verbose mode"
+    echo "-d <dnsdomain> : use <dnsdomain> for dns domain"
+    echo "-p <password>  : use <password> for LDAP Admin password"
+    echo 
+    echo "-y             : assume default answer in all prompts "
+    echo "                 except the password one"
 }
 
 echo_v() {
-	if [ -n "$verbose" ]; then
-		echo "== $@"
-	fi
+    if [ -n "$verbose" ]; then
+        echo "== $@"
+    fi
 }
 
 # output: stdout: example.com or the possible detected domain
 detect_domain() {
-	mydomain=`hostname -d`
-	if [ -z "$mydomain" ]; then
-		mydomain="example.com"
-	fi
-	echo "$mydomain"
-	return 0
+    mydomain=`hostname -d`
+    if [ -z "$mydomain" ]; then
+        mydomain="example.com"
+    fi
+    echo "$mydomain"
+    return 0
 }
 
 # $1: domain
 # returns standard dc=foo,dc=bar suffix on stdout
 calc_suffix() {
-	old_ifs=${IFS}
-	IFS="."
-	for component in $1; do
-		result="$result,dc=$component"
-	done
-	IFS="${old_ifs}"
-	echo "${result#,}"
-	return 0
+    old_ifs=${IFS}
+    IFS="."
+    for component in $1; do
+        result="$result,dc=$component"
+    done
+    IFS="${old_ifs}"
+    echo "${result#,}"
+    return 0
 }
 
 # test if sasl external works and maps us to something
@@ -87,14 +87,14 @@ test_auth() {
 }
 
 get_admin_password() {
-	echo
-	echo "Administrator account"
-	echo
-	echo "The administrator account for this directory is"
-	echo "uid=LDAP Admin,ou=System Accounts,$mysuffix"
-	echo
-	echo "Please choose a password for this account:"
-	while /bin/true; do
+    echo
+    echo "Administrator account"
+    echo
+    echo "The administrator account for this directory is"
+    echo "uid=LDAP Admin,ou=System Accounts,$mysuffix"
+    echo
+    echo "Please choose a password for this account:"
+    while /bin/true; do
         echo -n "New password: "
         stty -echo
         read pass1
@@ -117,7 +117,7 @@ get_admin_password() {
         fi
         pass="$pass1"
         break
-	done
+    done
     if [ -n "$pass" ]; then
         return 0
     fi
@@ -223,43 +223,43 @@ myfqdn=`hostname -f`
 verbose=
 noprompt=
 if [ -z "$myfqdn" ]; then
-	myfqdn="localhost"
+    myfqdn="localhost"
 fi
 ubuntu_setup
 
 while [ -n "$1" ]; do
-	case "$1" in
-		-h | --help)
-		usage
-		exit 1
-		;;
-		-v)
-		verbose=1
-		shift
-		;;
-		-d)
-		shift
-		if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
-			echo "Error, -d requires an argument"
-			exit 1
-		fi
-		mydomain="$1"
-		shift
-		;;
-		-p)
-		shift
-		if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
-			echo "Error, -p requires an argument"
-			exit 1
-		fi
-		mypass="$1"
-		shift
-		;;
-		-y)
-		noprompt=1
-		shift
-		;;
-	esac
+    case "$1" in
+        -h | --help)
+        usage
+        exit 1
+        ;;
+        -v)
+        verbose=1
+        shift
+        ;;
+        -d)
+        shift
+        if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
+            echo "Error, -d requires an argument"
+            exit 1
+        fi
+        mydomain="$1"
+        shift
+        ;;
+        -p)
+        shift
+        if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
+            echo "Error, -p requires an argument"
+            exit 1
+        fi
+        mypass="$1"
+        shift
+        ;;
+        -y)
+        noprompt=1
+        shift
+        ;;
+    esac
 done
 
 echo_v
@@ -279,21 +279,21 @@ else
 fi
 
 if [ -z "$mydomain" ]; then
-	mydomain=`detect_domain`
-	if [ -z "$noprompt" ]; then
-		echo "Please enter your DNS domain name [$mydomain]:"
-		read inputdomain
-		if [ -n "$inputdomain" ]; then
-			mydomain="$inputdomain"
-		fi
-	fi
+    mydomain=`detect_domain`
+    if [ -z "$noprompt" ]; then
+        echo "Please enter your DNS domain name [$mydomain]:"
+        read inputdomain
+        if [ -n "$inputdomain" ]; then
+            mydomain="$inputdomain"
+        fi
+    fi
 fi
 mysuffix=`calc_suffix $mydomain`
 
 if [ -z "$mypass" ]; then
     get_admin_password
 else
-	pass="$mypass"
+    pass="$mypass"
 fi
 
 # confirmation
@@ -307,13 +307,13 @@ echo "LDAP suffix:   $mysuffix"
 echo "Administrator: uid=LDAP Admin,ou=System Accounts,$mysuffix"
 echo
 if [ -z "$noprompt" ]; then
-	echo "Confirm? (Y/n)"
-	read val
-	if [ "$val" = "n" -o "$val" = "N" ]; then
-		echo
-		echo "Cancelled."
-		exit 1
-	fi
+    echo "Confirm? (Y/n)"
+    read val
+    if [ "$val" = "n" -o "$val" = "N" ]; then
+        echo
+        echo "Cancelled."
+        exit 1
+    fi
 fi
 
 # steps:
