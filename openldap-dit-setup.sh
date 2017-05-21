@@ -9,6 +9,7 @@ LDAPWHOAMI="ldapwhoami -H ldapi:/// -Y EXTERNAL -Q"
 LDAPADD="ldapadd -H ldapi:/// -Y EXTERNAL -Q"
 LDAPMODIFY="ldapmodify -H ldapi:/// -Y EXTERNAL -Q"
 LDAPPASSWD="ldappasswd -H ldapi:/// -Y EXTERNAL -Q"
+LDAPSEARCH="ldapsearch -H ldapi:/// -Y EXTERNAL -Q"
 
 
 ubuntu_setup() {
