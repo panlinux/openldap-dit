@@ -12,11 +12,6 @@ LDAPPASSWD="ldappasswd -H ldapi:/// -Y EXTERNAL -Q"
 
 
 ubuntu_setup() {
-    if [ -x /usr/sbin/invoke-rc.d ]; then
-        SERVICE="/usr/sbin/invoke-rc.d slapd"
-    else
-        SERVICE="/etc/init.d/slapd"
-    fi
     export root="/usr/share/slapd/openldap-dit"
     export databases_dir="$root/databases"
     export schemas_dir="$root/schemas"
