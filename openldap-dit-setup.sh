@@ -182,7 +182,30 @@ modify_ldif() {
 }
 
 add_modules() {
-    add_ldif "modules" "$modules_dir"
+    need_modules="no"
+    template="dn: cn=module,cn=config
+cn: module
+objectClass: olcModuleList
+"
+    echo -n "Checking which modules are needed... "
+	wanted_modules="ppolicy unique back_monitor refint syncprov"
+    load_modules=""
+    existing_modules=$($LDAPSEARCH -b 'cn=config' '(objectClass=olcModuleList)' olcModuleLoad)
+    existing_modules=$(echo "$existing_modules" | grep -E "^olcModuleLoad.*\.la$"|sed -r 's/.*\{[0-9]+\}([-_[:alnum:]]+)\.la/\1/')
+    for module in $wanted_modules; do
+        if echo "$existing_modules" | grep -q "$module"; then
+            continue
+        fi
+        echo -n "$module "
+        template="$template\nolcModuleLoad: ${module}.la"
+        need_modules="yes"
+    done
+    if [ "$need_modules" = "no" ]; then
+        echo "None."
+        return
+    fi
+    echo "$template"
+    exit 0
     return 0
 }
 
