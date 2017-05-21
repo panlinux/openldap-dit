@@ -10,8 +10,7 @@ LDAPADD="ldapadd -H ldapi:/// -Y EXTERNAL -Q"
 LDAPMODIFY="ldapmodify -H ldapi:/// -Y EXTERNAL -Q"
 LDAPPASSWD="ldappasswd -H ldapi:/// -Y EXTERNAL -Q"
 
-distro_guess()
-{
+distro_guess() {
 #$ cat /etc/lsb-release 
 #DISTRIB_ID=Ubuntu
 #DISTRIB_RELEASE=8.04
@@ -33,8 +32,7 @@ distro_guess()
     return 0
 }
 
-ubuntu_setup()
-{
+ubuntu_setup() {
     if [ -x /usr/sbin/invoke-rc.d ]; then
         SERVICE="/usr/sbin/invoke-rc.d slapd"
     else
