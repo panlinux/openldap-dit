@@ -230,35 +230,35 @@ ubuntu_setup
 while [ -n "$1" ]; do
     case "$1" in
         -h | --help)
-        usage
-        exit 1
-        ;;
+            usage
+            exit 1
+            ;;
         -v)
-        verbose=1
-        shift
-        ;;
+            verbose=1
+            shift
+            ;;
         -d)
-        shift
-        if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
-            echo "Error, -d requires an argument"
-            exit 1
-        fi
-        mydomain="$1"
-        shift
-        ;;
+            shift
+            if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
+                echo "Error, -d requires an argument"
+                exit 1
+            fi
+            mydomain="$1"
+            shift
+            ;;
         -p)
-        shift
-        if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
-            echo "Error, -p requires an argument"
-            exit 1
-        fi
-        mypass="$1"
-        shift
-        ;;
+            shift
+            if [ -n "$1" -a "${1##-}" != "${1}" -o -z "${1}" ]; then
+                echo "Error, -p requires an argument"
+                exit 1
+            fi
+            mypass="$1"
+            shift
+            ;;
         -y)
-        noprompt=1
-        shift
-        ;;
+            noprompt=1
+            shift
+            ;;
     esac
 done
 
