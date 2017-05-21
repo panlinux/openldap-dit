@@ -14,12 +14,12 @@ openldap_dit_dir = $(datadir)/$(NAME)
 install:
 	mkdir -p $(DESTDIR)$(docdir)
 	mkdir -p $(DESTDIR)$(openldap_dit_dir)
-	mkdir $(DESTDIR)$(openldap_dit_dir)/acls
-	mkdir $(DESTDIR)$(openldap_dit_dir)/databases
-	mkdir $(DESTDIR)$(openldap_dit_dir)/overlays
-	mkdir $(DESTDIR)$(openldap_dit_dir)/schemas
-	mkdir $(DESTDIR)$(openldap_dit_dir)/modules
-	mkdir $(DESTDIR)$(openldap_dit_dir)/contents
+	mkdir -p $(DESTDIR)$(openldap_dit_dir)/acls
+	mkdir -p $(DESTDIR)$(openldap_dit_dir)/databases
+	mkdir -p $(DESTDIR)$(openldap_dit_dir)/overlays
+	mkdir -p $(DESTDIR)$(openldap_dit_dir)/schemas
+	mkdir -p $(DESTDIR)$(openldap_dit_dir)/modules
+	mkdir -p $(DESTDIR)$(openldap_dit_dir)/contents
 	install -m 0755 $(NAME)-setup.sh $(DESTDIR)$(openldap_dit_dir)
 	install -m 0644 schemas/* $(DESTDIR)$(openldap_dit_dir)/schemas
 	install -m 0644 doc/* TODO LICENSE COPYRIGHT $(DESTDIR)$(docdir)
