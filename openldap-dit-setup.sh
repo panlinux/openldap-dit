@@ -84,14 +84,20 @@ calc_suffix() {
     return 0
 }
 
-# test if sasl external works and maps us to something
+# test if sasl external works and if we have write access to
+# cn=config
 test_auth() {
-    out=$($LDAPWHOAMI)
+    my_dn=$($LDAPWHOAMI | cut -d : -f 2)
     [ "$?" -ne "0" ] && return 1
-    if [ "$out" = "gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" ]; then
-        return 0
-    else
+    if [ "$my_dn" != "gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" ]; then
         return 1
+    else
+        allowed=$(slapacl -b cn=config olcLogLevel/write -D "$my_dn" -u 2>&1| grep ALLOWED)
+        if [ -n "$allowed" ]; then
+            return 0
+        else
+            return 1
+        fi
     fi
 }
 
