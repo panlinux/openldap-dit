@@ -10,7 +10,7 @@ LDAPADD="ldapadd -H ldapi:/// -Y EXTERNAL -Q"
 LDAPMODIFY="ldapmodify -H ldapi:/// -Y EXTERNAL -Q"
 LDAPPASSWD="ldappasswd -H ldapi:/// -Y EXTERNAL -Q"
 
-function distro_guess()
+distro_guess()
 {
 #$ cat /etc/lsb-release 
 #DISTRIB_ID=Ubuntu
@@ -33,7 +33,7 @@ function distro_guess()
     return 0
 }
 
-function ubuntu_setup()
+ubuntu_setup()
 {
     if [ -x /usr/sbin/invoke-rc.d ]; then
         SERVICE="/usr/sbin/invoke-rc.d slapd"
@@ -58,7 +58,7 @@ function ubuntu_setup()
     return 0
 }
 
-function usage() {
+usage() {
 	echo "Usage:"
 	echo "$0 [-h | --help] [-v] [-d <dnsdomain>] [-p <password>] [-y]"
 	echo
@@ -71,14 +71,14 @@ function usage() {
 	echo "                 except the password one"
 }
 
-function echo_v() {
+echo_v() {
 	if [ -n "$verbose" ]; then
 		echo "== $@"
 	fi
 }
 
 # output: stdout: example.com or the possible detected domain
-function detect_domain() {
+detect_domain() {
 	mydomain=`hostname -d`
 	if [ -z "$mydomain" ]; then
 		mydomain="example.com"
@@ -89,7 +89,7 @@ function detect_domain() {
 
 # $1: domain
 # returns standard dc=foo,dc=bar suffix on stdout
-function calc_suffix() {
+calc_suffix() {
 	old_ifs=${IFS}
 	IFS="."
 	for component in $1; do
@@ -101,7 +101,7 @@ function calc_suffix() {
 }
 
 # test if sasl external works and maps us to something
-function test_auth() {
+test_auth() {
     out=$($LDAPWHOAMI)
     [ "$?" -ne "0" ] && return 1
     # XXX - too specific for ubuntu's ldap deployment...
@@ -114,7 +114,7 @@ function test_auth() {
     fi
 }
 
-function get_admin_password() {
+get_admin_password() {
 	echo
 	echo "Administrator account"
 	echo
@@ -152,7 +152,7 @@ function get_admin_password() {
     return 1
 }
 
-function check_result() {
+check_result() {
     if [ "$1" -ne "0" ]; then
         echo "ERROR, aborting"
         exit 1
@@ -164,7 +164,7 @@ function check_result() {
 # $1: descriptive text of what is being added
 # $2: directory where the files are
 # $3: optional sed expression to use
-function add_ldif() {
+add_ldif() {
     echo "Adding $1..."
     for n in $2/*.ldif; do
         if [ -z "$n" ]; then
@@ -187,7 +187,7 @@ function add_ldif() {
 # $1: descriptive text of what is being added
 # $2: directory where the files are
 # $3: optional sed expression to use
-function modify_ldif() {
+modify_ldif() {
     echo "Modifying $1..."
     for n in $2/*.ldif; do
         if [ -z "$n" ]; then
@@ -207,37 +207,37 @@ function modify_ldif() {
     return 0
 }
 
-function add_modules() {
+add_modules() {
     add_ldif "modules" "$modules_dir"
     return 0
 }
 
-function add_schemas() {
+add_schemas() {
     add_ldif "schemas" "$schemas_dir"
     return 0
 }
 
-function add_db () {
+add_db () {
     add_ldif "database" "$databases_dir" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
-function modify_acls() {
+modify_acls() {
     modify_ldif "ACLs" "$acls_dir" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
-function add_overlays() {
+add_overlays() {
     add_ldif "overlays" "$overlays_dir" "s/@SUFFIX@/$mysuffix/g"
     return 0
 }
 
-function populate_db() {
+populate_db() {
     add_ldif "populated database" "$contents_dir" "s/@SUFFIX@/$mysuffix/g;s/@DC@/${mydomain%%.[a-zA-Z0-9]*}/g;s/@DOMAIN@/${mydomain}/g"
     return 0
 }
 
-function set_admin_password() {
+set_admin_password() {
     echo "Setting the admin password..."
     # XXX - password will show up briefly in the command line and process
     # list
