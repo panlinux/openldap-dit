@@ -254,7 +254,7 @@ The installation script
 
 The openldap-dit package contains a shell script which can be used to
 install the accounts and ACLs described in this document. The script is
-installed at /usr/share/openldap/scripts/openldap-dit-setup.sh and performs the
+installed at /usr/share/openldap-dir/openldap-dit-setup.sh and performs the
 following:
 - asks the DNS domain (suggesting whatever was auto-detected)
 - constructs the top-level directory entry from this domain using dc style
@@ -283,7 +283,7 @@ Specifically, it will backup and overwrite the following:
 So, after you are satisfied that nothing important will be lost, run the
 script. Below is a sample run using the example.com domain:
 
-root@nsn2:~# /usr/share/slapd/openldap-dit-setup.sh 
+root@nsn2:~# /usr/share/openldap-dit/openldap-dit-setup.sh
 Please enter your DNS domain name [example.com]:
 
 
