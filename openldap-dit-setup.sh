@@ -108,22 +108,18 @@ get_admin_password() {
     echo "The administrator account for this directory is"
     echo "uid=LDAP Admin,ou=System Accounts,$mysuffix"
     echo
+    echo "(the rootDN will remain unchanged)"
+    echo
     echo "Please choose a password for this account:"
     while /bin/true; do
-        echo -n "New password: "
-        stty -echo
-        read pass1
-        stty echo
+        read -p "New password: " -s pass1
         echo
         if [ -z "$pass1" ]; then
             echo "Error, password cannot be empty"
             echo
             continue
         fi
-        echo -n "Repeat new password: "
-        stty -echo
-        read pass2
-        stty echo
+        read -p "Repeat new password: " -s pass2
         echo
         if [ "$pass1" != "$pass2" ]; then
             echo "Error, passwords don't match"
@@ -273,7 +269,6 @@ echo_v "Running in verbose mode"
 echo_v
 
 
-# testing
 echo -n "Testing administrative access to local ldap server... "
 test_auth
 check_result "$?"
@@ -281,8 +276,7 @@ check_result "$?"
 if [ -z "$mydomain" ]; then
     mydomain=`detect_domain`
     if [ -z "$noprompt" ]; then
-        echo "Please enter your DNS domain name [$mydomain]:"
-        read inputdomain
+        read -p "Please enter your DNS domain name [$mydomain]: " inputdomain
         if [ -n "$inputdomain" ]; then
             mydomain="$inputdomain"
         fi
@@ -307,8 +301,7 @@ echo "LDAP suffix:   $mysuffix"
 echo "Administrator: uid=LDAP Admin,ou=System Accounts,$mysuffix"
 echo
 if [ -z "$noprompt" ]; then
-    echo "Confirm? (Y/n)"
-    read val
+    read -p "Confirm? (Y/n): " val
     if [ "$val" = "n" -o "$val" = "N" ]; then
         echo
         echo "Cancelled."
@@ -359,7 +352,5 @@ echo "Remember: this is your administrator bind dn:"
 echo "uid=LDAP Admin,ou=System Accounts,$mysuffix"
 echo
 echo "You can use it in double quotes in the command line, like:"
-echo "ldapwhoami -x -D \"uid=LDAP Admin,ou=System Accounts,$mysuffix\" -W "
+echo "ldapwhoami -x -D \"uid=LDAP Admin,ou=System Accounts,$mysuffix\" -W"
 echo
-
-
