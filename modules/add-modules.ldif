@@ -1,8 +1,6 @@
 dn: cn=module,cn=config
 cn: module
 objectClass: olcModuleList
-olcModuleLoad: back_hdb.la
-olcModuleLoad: back_bdb.la
 olcModuleLoad: ppolicy.la
 olcModuleLoad: unique.la
 olcModuleLoad: back_monitor.la

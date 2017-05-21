@@ -12,13 +12,13 @@ LDAPPASSWD="ldappasswd -H ldapi:/// -Y EXTERNAL -Q"
 
 
 ubuntu_setup() {
-    export root="/usr/share/slapd/openldap-dit"
-    export databases_dir="$root/databases"
-    export schemas_dir="$root/schemas"
-    export acls_dir="$root/acls"
-    export modules_dir="$root/modules"
-    export overlays_dir="$root/overlays"
-    export contents_dir="$root/contents"
+    export prefix="/usr/share/openldap-dit"
+    export databases_dir="$prefix/databases"
+    export schemas_dir="$prefix/schemas"
+    export acls_dir="$prefix/acls"
+    export modules_dir="$prefix/modules"
+    export overlays_dir="$prefix/overlays"
+    export contents_dir="$prefix/contents"
 
     for package in slapd ldap-utils libsasl2-modules; do
         if ! dpkg -l $package 2>/dev/null | grep -q ^ii; then
@@ -141,7 +141,7 @@ get_admin_password() {
 add_ldif() {
     echo "Adding $1..."
     for n in $2/*.ldif; do
-        if [ -z "$n" ]; then
+        if [ ! -s "$n" ]; then
             echo "Error, no file to use!"
             return 1
         fi
