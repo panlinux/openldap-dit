@@ -49,6 +49,18 @@ echo_v() {
     fi
 }
 
+check_result() {
+    if [ "$1" -ne "0" ]; then
+        echo "ERROR"
+        if [ -n "$2" ]; then
+            echo "$2"
+        fi
+        exit 1
+    else
+        echo "OK"
+    fi
+}
+
 # output: stdout: example.com or the possible detected domain
 detect_domain() {
     mydomain=`hostname -d`
@@ -119,15 +131,6 @@ get_admin_password() {
         return 0
     fi
     return 1
-}
-
-check_result() {
-    if [ "$1" -ne "0" ]; then
-        echo "ERROR, aborting"
-        exit 1
-    else
-        echo "Succeeded!"
-    fi
 }
 
 # $1: descriptive text of what is being added
@@ -265,15 +268,9 @@ echo_v
 
 
 # testing
-echo "Testing administrative access to local ldap server"
+echo -n "Testing administrative access to local ldap server... "
 test_auth
-if [ "$?" -eq "0" ]; then
-    echo "Success!"
-else
-    echo "FAILURE!"
-    echo "Command \"$LDAPWHOAMI\" failed"
-    exit 1
-fi
+check_result "$?"
 
 if [ -z "$mydomain" ]; then
     mydomain=`detect_domain`
