@@ -76,10 +76,7 @@ calc_suffix() {
 test_auth() {
     out=$($LDAPWHOAMI)
     [ "$?" -ne "0" ] && return 1
-    # XXX - too specific for ubuntu's ldap deployment...
-    # a better test would be slapacl, but I couldn't get it
-    # to work
-    if [ "$out" = "dn:cn=localroot,cn=config" ]; then
+    if [ "$out" = "gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" ]; then
         return 0
     else
         return 1
