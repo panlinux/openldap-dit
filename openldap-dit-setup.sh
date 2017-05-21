@@ -182,31 +182,39 @@ modify_ldif() {
     return 0
 }
 
-add_modules() {
-    need_modules="no"
-    template="dn: cn=module,cn=config
-cn: module
-objectClass: olcModuleList
-"
-    echo -n "Checking which modules are needed... "
-	wanted_modules="ppolicy unique back_monitor refint syncprov"
-    load_modules=""
-    existing_modules=$($LDAPSEARCH -b 'cn=config' '(objectClass=olcModuleList)' olcModuleLoad)
+# $@: given a space separated list of modules we want, return
+# the ones that are missing and that we have to load
+_get_needed_modules() {
+    local wanted_modules="$@"
+    local needed_modules=""
+    local existing_modules=$($LDAPSEARCH -b 'cn=config' '(objectClass=olcModuleList)' olcModuleLoad)
     existing_modules=$(echo "$existing_modules" | grep -E "^olcModuleLoad.*\.la$"|sed -r 's/.*\{[0-9]+\}([-_[:alnum:]]+)\.la/\1/')
     for module in $wanted_modules; do
         if echo "$existing_modules" | grep -q "$module"; then
             continue
         fi
-        echo -n "$module "
-        template="$template\nolcModuleLoad: ${module}.la"
-        need_modules="yes"
+        needed_modules="$needed_modules $module"
     done
-    if [ "$need_modules" = "no" ]; then
+    echo "$needed_modules"
+}
+
+add_modules() {
+	local wanted_modules="ppolicy unique back_monitor refint syncprov"
+    local template="dn: cn=module,cn=config
+cn: module
+objectClass: olcModuleList"
+    echo -n "Checking which modules are needed... "
+    local modules=$(_get_needed_modules $wanted_modules)
+    if [ -z "$modules" ]; then
         echo "None."
         return
     fi
-    echo "$template"
-    exit 0
+    echo "$modules"
+    for module in $modules; do
+        template="${template}\nolcModuleLoad: ${module}.la"
+    done
+    echo -n "Adding the modules... "
+    echo -e "$template" | $LDAPADD
     return 0
 }
 
