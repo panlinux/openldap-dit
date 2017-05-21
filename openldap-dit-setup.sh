@@ -349,7 +349,7 @@ check_result $?
 
 echo
 echo "Finished, doing one last restart..."
-/etc/init.d/slapd restart
+service slapd restart
 check_result $?
 
 echo
